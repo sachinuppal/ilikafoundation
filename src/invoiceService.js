@@ -197,18 +197,18 @@ export function generateDonationReceipt({
         y += lines.length * 5 + 3;
     });
 
-    y += 10;
+    y += 6;
 
     // ─── AUTHORIZED SIGNATORY SECTION ───
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
     doc.setTextColor(40, 40, 40);
     doc.text("For Twelve Ten Empowering Possibilities Foundation", pageW - margin, y, { align: "right" });
-    y += 12;
+    y += 8;
 
     // Actual signatory stamp + signature image
-    const stampImgW = 80;
-    const stampImgH = 30;
+    const stampImgW = 70;
+    const stampImgH = 22;
     const stampImgX = pageW - margin - stampImgW;
     try {
         doc.addImage(SIGNATORY_STAMP, "PNG", stampImgX, y - 2, stampImgW, stampImgH);
@@ -219,30 +219,30 @@ export function generateDonationReceipt({
         doc.text("[Stamp & Signature]", pageW - margin, y + 10, { align: "right" });
     }
 
-    y += stampImgH + 4;
+    y += stampImgH + 2;
     doc.setFont("helvetica", "italic");
     doc.setFontSize(9);
     doc.setTextColor(60, 60, 60);
     doc.text("Authorized Signatory", pageW - margin, y, { align: "right" });
 
-    y += 16;
+    y += 10;
 
     // ─── TERMS & CONDITIONS ───
     doc.setDrawColor(100, 140, 180);
     doc.line(margin, y, pageW - margin, y);
-    y += 8;
+    y += 6;
 
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(9);
+    doc.setFontSize(8);
     doc.setTextColor(40, 40, 40);
     doc.text("Terms & Conditions", margin, y);
     doc.setDrawColor(40, 40, 40);
     doc.setLineWidth(0.2);
-    doc.line(margin, y + 1, margin + 34, y + 1); // underline
-    y += 7;
+    doc.line(margin, y + 1, margin + 30, y + 1); // underline
+    y += 5;
 
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
+    doc.setFontSize(7);
     doc.setTextColor(60, 60, 60);
     const terms = [
         "1.  Cheque/DD is subject to realization",
@@ -253,28 +253,28 @@ export function generateDonationReceipt({
     ];
     terms.forEach(line => {
         doc.text(line, margin, y);
-        y += 4.5;
+        y += 3.8;
     });
 
     // ─── FOOTER ───
-    y = pageH - 22;
+    y += 4;
     doc.setDrawColor(100, 140, 180);
     doc.setLineWidth(0.3);
     doc.line(margin, y, pageW - margin, y);
-    y += 6;
+    y += 5;
 
-    doc.setFontSize(8);
+    doc.setFontSize(7);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(40, 70, 110);
 
     // Footer icons + text
     doc.text("contact@ilikafoundation.org", pageW / 2 - 30, y, { align: "center" });
     doc.text("www.ilikafoundation.org", pageW / 2 + 30, y, { align: "center" });
-    y += 5;
-    doc.setFontSize(7);
+    y += 4;
+    doc.setFontSize(6);
     doc.setTextColor(60, 60, 60);
     doc.text("Twelve Ten Empowering Possibilities Foundation", pageW / 2, y, { align: "center" });
-    y += 4;
+    y += 3;
     doc.text("396/10 Nirmal, Flat No. 4, North Avenue Road, Santacruz (West), Mumbai - 400054", pageW / 2, y, { align: "center" });
 
     // ─── DOWNLOAD ───
