@@ -200,11 +200,7 @@ export function generateDonationReceipt({
     y += 6;
 
     // ─── AUTHORIZED SIGNATORY SECTION ───
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(10);
-    doc.setTextColor(40, 40, 40);
-    doc.text("For Twelve Ten Empowering Possibilities Foundation", pageW - margin, y, { align: "right" });
-    y += 8;
+    y += 4;
 
     // Actual signatory stamp + signature image
     const stampImgW = 70;
@@ -220,10 +216,6 @@ export function generateDonationReceipt({
     }
 
     y += stampImgH + 2;
-    doc.setFont("helvetica", "italic");
-    doc.setFontSize(9);
-    doc.setTextColor(60, 60, 60);
-    doc.text("Authorized Signatory", pageW - margin, y, { align: "right" });
 
     // ─── PAGE 2: TERMS & CONDITIONS ───
     doc.addPage();
@@ -276,13 +268,13 @@ export function generateDonationReceipt({
     doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(40, 70, 110);
-    doc.text("contact@ilikafoundation.org", pageW / 2 - 35, y, { align: "center" });
-    doc.text("www.ilikafoundation.org", pageW / 2 + 35, y, { align: "center" });
+    doc.text("contact@ilikafoundation.org  |  www.ilikafoundation.org", pageW / 2, y, { align: "center" });
     y += 6;
     doc.setFontSize(7);
     doc.setTextColor(60, 60, 60);
     doc.text("Twelve Ten Empowering Possibilities Foundation", pageW / 2, y, { align: "center" });
-    y += 5;
+    y += 4;
+    doc.setFontSize(6.5);
     doc.text("396/10 Nirmal, Flat No. 4, North Avenue Road, Santacruz (West), Mumbai - 400054", pageW / 2, y, { align: "center" });
 
     // ─── DOWNLOAD ───
