@@ -225,56 +225,63 @@ export function generateDonationReceipt({
     doc.setTextColor(60, 60, 60);
     doc.text("Authorized Signatory", pageW - margin, y, { align: "right" });
 
-    y += 10;
+    // ─── PAGE 2: TERMS & CONDITIONS ───
+    doc.addPage();
 
-    // ─── TERMS & CONDITIONS ───
+    // Light blue background for page 2
+    doc.setFillColor(...bgColor);
+    doc.rect(0, 0, pageW, pageH, "F");
+
+    // White content area for page 2
+    doc.setFillColor(255, 255, 255);
     doc.setDrawColor(100, 140, 180);
-    doc.line(margin, y, pageW - margin, y);
-    y += 6;
+    doc.setLineWidth(0.5);
+    doc.roundedRect(boxX, boxY, boxW, boxH, 3, 3, "FD");
+
+    y = 30;
 
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
+    doc.setFontSize(11);
     doc.setTextColor(40, 40, 40);
     doc.text("Terms & Conditions", margin, y);
     doc.setDrawColor(40, 40, 40);
-    doc.setLineWidth(0.2);
-    doc.line(margin, y + 1, margin + 30, y + 1); // underline
-    y += 5;
+    doc.setLineWidth(0.3);
+    doc.line(margin, y + 1.5, margin + 38, y + 1.5); // underline
+    y += 12;
 
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(7);
+    doc.setFontSize(9);
     doc.setTextColor(60, 60, 60);
     const terms = [
         "1.  Cheque/DD is subject to realization",
         "2.  PAN is compulsory for issuance of 80G receipts",
-        "3.  We have received a provisional 80g registration certificate that is valid till AY2027-28. We will apply for the final registration before the",
-        "     validity of this certificate ends, as per prevailing regulations.",
+        "3.  We have received a provisional 80G registration certificate that is valid till AY2027-28.",
+        "     We will apply for the final registration before the validity of this certificate ends,",
+        "     as per prevailing regulations.",
         "4.  Deduction under Section 80G is subject to verification from Form 10BE issued annually.",
     ];
     terms.forEach(line => {
         doc.text(line, margin, y);
-        y += 3.8;
+        y += 6;
     });
 
-    // ─── FOOTER ───
-    y += 4;
+    // ─── FOOTER (page 2 bottom) ───
+    y = pageH - 30;
     doc.setDrawColor(100, 140, 180);
     doc.setLineWidth(0.3);
     doc.line(margin, y, pageW - margin, y);
-    y += 5;
+    y += 7;
 
-    doc.setFontSize(7);
+    doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(40, 70, 110);
-
-    // Footer icons + text
-    doc.text("contact@ilikafoundation.org", pageW / 2 - 30, y, { align: "center" });
-    doc.text("www.ilikafoundation.org", pageW / 2 + 30, y, { align: "center" });
-    y += 4;
-    doc.setFontSize(6);
+    doc.text("contact@ilikafoundation.org", pageW / 2 - 35, y, { align: "center" });
+    doc.text("www.ilikafoundation.org", pageW / 2 + 35, y, { align: "center" });
+    y += 6;
+    doc.setFontSize(7);
     doc.setTextColor(60, 60, 60);
     doc.text("Twelve Ten Empowering Possibilities Foundation", pageW / 2, y, { align: "center" });
-    y += 3;
+    y += 5;
     doc.text("396/10 Nirmal, Flat No. 4, North Avenue Road, Santacruz (West), Mumbai - 400054", pageW / 2, y, { align: "center" });
 
     // ─── DOWNLOAD ───
