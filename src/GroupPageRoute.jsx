@@ -4,6 +4,7 @@ import { C, Check, Users, Share, Arrow, Back, Clock, Facepile, GlobalStyles, inp
 import { getGroupBySlug, joinGroup, unjoinGroup, updatePaymentStatus } from "./dataService.js";
 import { openRazorpayCheckout } from "./razorpayService.js";
 import { StatusToast, ToastStyles, useToast } from "./statusToast.jsx";
+import { generateDonationReceipt } from "./invoiceService.js";
 
 export default function GroupPageRoute() {
     const { slug } = useParams();
@@ -127,11 +128,37 @@ export default function GroupPageRoute() {
                 {done ? (
                     <div style={{ textAlign: "center" }}><div style={{ background: C.greenS, border: `1px solid ${C.green}22`, borderRadius: 16, padding: 32, marginBottom: 24 }}><div style={{ fontSize: 40, marginBottom: 12 }}>🎉</div><h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, marginBottom: 8, color: C.green }}>Fully Sponsored!</h3><p style={{ color: C.tm, fontSize: 14, lineHeight: 1.6 }}>This girl's education is now fully supported. Thank you!</p></div><button onClick={() => navigate("/")} style={{ background: "transparent", border: `2px solid ${C.green}`, color: C.green, padding: "14px 32px", borderRadius: 8, fontSize: 15, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Start Another Group</button></div>
                 ) : submitted ? (
-                    <div style={{ textAlign: "center", background: C.greenS, border: `1px solid ${C.green}22`, borderRadius: 16, padding: 32 }}><div style={{ color: C.green }}><Check s={32} /></div><h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, margin: "12px 0 8px", color: C.green }}>You're In!</h3><p style={{ color: C.tm, fontSize: 14 }}>Redirecting to Razorpay for {"\u20B9"}2,000/month subscription...</p></div>
+                    <div style={{ textAlign: "center" }}>
+                        <div style={{ background: C.greenS, border: `1px solid ${C.green}22`, borderRadius: 16, padding: 32, marginBottom: 20 }}>
+                            <div style={{ color: C.green }}><Check s={32} /></div>
+                            <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, margin: "12px 0 8px", color: C.green }}>Thank You for Joining!</h3>
+                            <p style={{ color: C.tm, fontSize: 14, lineHeight: 1.6, marginBottom: 0 }}>Your contribution of {"\u20B9"}2,000/month helps sponsor a girl's education. You'll receive a confirmation email shortly.</p>
+                        </div>
+                        {/* Download Receipt */}
+                        <button onClick={() => { generateDonationReceipt({ donorName: form.name, email: form.email, phone: form.phone, amount: 2000, type: "group", paymentPreference: "monthly" }); }} style={{ background: C.white, border: `2px solid ${C.green}`, color: C.green, padding: "12px 28px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 20 }}>📄 Download Receipt</button>
+                        {/* Invite more people */}
+                        {left > 0 && <>
+                            <p style={{ color: C.tl, fontSize: 13, marginBottom: 12 }}>Help fill the group — {left} spot{left !== 1 ? "s" : ""} remaining!</p>
+                            <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+                                <a href={`https://wa.me/?text=${encodeURIComponent(`I just sponsored a girl's education through Ilika! Join my group — only ${left} spot${left !== 1 ? "s" : ""} left!\n${window.location.href}`)}`} target="_blank" rel="noopener noreferrer" style={{ background: "#25D366", color: "#fff", padding: "12px 24px", borderRadius: 8, fontSize: 14, fontWeight: 600, fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 8, textDecoration: "none", border: "none", cursor: "pointer" }}>💬 Share on WhatsApp</a>
+                                <button onClick={() => { navigator.clipboard?.writeText(window.location.href); showCustomToast("success", "Link Copied!", "Share this link with friends to fill your group."); }} style={{ background: C.white, border: `2px solid ${C.green}`, color: C.green, padding: "12px 24px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 8 }}>📋 Copy Link</button>
+                            </div>
+                        </>}
+                    </div>
                 ) : !showForm ? (
-                    <div style={{ textAlign: "center" }}><button onClick={() => setShowForm(true)} style={{ background: `linear-gradient(135deg,${C.green},${C.greenL})`, color: C.white, border: "none", padding: "16px 48px", borderRadius: 8, fontSize: 16, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", boxShadow: `0 4px 24px ${C.green}33`, display: "inline-flex", alignItems: "center", gap: 10 }}>Join This Group <Arrow /></button><p style={{ marginTop: 8, fontSize: 13, color: C.tx }}>{"\u20B9"}2,000/month {"\u00B7"} Only {left} spot{left !== 1 ? "s" : ""} left</p><p style={{ marginTop: 4, fontSize: 11, color: C.tl }}>Secure payment via Razorpay {"\u00B7"} 80G tax exempt {"\u00B7"} Cancel anytime</p></div>
+                    <div style={{ textAlign: "center" }}>
+                        <button onClick={() => setShowForm(true)} style={{ background: `linear-gradient(135deg,${C.green},${C.greenL})`, color: C.white, border: "none", padding: "16px 48px", borderRadius: 8, fontSize: 16, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", boxShadow: `0 4px 24px ${C.green}33`, display: "inline-flex", alignItems: "center", gap: 10 }}>Join This Group <Arrow /></button>
+                        <p style={{ marginTop: 8, fontSize: 13, color: C.tx }}>{"\u20B9"}2,000/month {"\u00B7"} Only {left} spot{left !== 1 ? "s" : ""} left</p>
+                        <p style={{ marginTop: 4, fontSize: 11, color: C.tl }}>Secure payment via Razorpay {"\u00B7"} 80G tax exempt {"\u00B7"} Cancel anytime</p>
+                    </div>
                 ) : (
-                    <div style={{ background: C.white, borderRadius: 16, padding: 28, border: `1px solid ${C.brd}`, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}><h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, marginBottom: 4, color: C.green }}>Join this group</h3><p style={{ color: C.tl, fontSize: 12, marginBottom: 20 }}>Takes less than 60 seconds</p>{["name", "email", "phone"].map(f => <div key={f} style={{ marginBottom: 16 }}><label style={lbl}>{f}</label><input type={f === "email" ? "email" : f === "phone" ? "tel" : "text"} value={form[f]} onChange={e => setForm({ ...form, [f]: e.target.value })} style={inp} placeholder={f === "name" ? "Your full name" : f === "email" ? "you@email.com" : "+91 XXXXX XXXXX"} /></div>)}<button onClick={handleJoin} style={{ width: "100%", background: `linear-gradient(135deg,${C.green},${C.greenL})`, color: C.white, border: "none", padding: "14px", borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", marginTop: 8 }}>Confirm & Proceed to Payment</button><p style={{ textAlign: "center", fontSize: 11, color: C.tl, marginTop: 10 }}>Secure Razorpay {"\u00B7"} 80G tax receipt {"\u00B7"} Cancel anytime</p></div>
+                    <div style={{ background: C.white, borderRadius: 16, padding: 28, border: `1px solid ${C.brd}`, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+                        <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, marginBottom: 4, color: C.green }}>Join this group</h3>
+                        <p style={{ color: C.tl, fontSize: 12, marginBottom: 20 }}>Takes less than 60 seconds</p>
+                        {["name", "email", "phone"].map(f => <div key={f} style={{ marginBottom: 16 }}><label style={lbl}>{f}</label><input type={f === "email" ? "email" : f === "phone" ? "tel" : "text"} value={form[f]} onChange={e => setForm({ ...form, [f]: e.target.value })} style={inp} placeholder={f === "name" ? "Your full name" : f === "email" ? "you@email.com" : "+91 XXXXX XXXXX"} /></div>)}
+                        <button onClick={handleJoin} style={{ width: "100%", background: `linear-gradient(135deg,${C.green},${C.greenL})`, color: C.white, border: "none", padding: "14px", borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", marginTop: 8 }}>Confirm & Proceed to Payment</button>
+                        <p style={{ textAlign: "center", fontSize: 11, color: C.tl, marginTop: 10 }}>Secure Razorpay {"\u00B7"} 80G tax receipt {"\u00B7"} Cancel anytime</p>
+                    </div>
                 )}
                 {!done && !submitted && <div style={{ marginTop: 24, display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
                     <a href={`https://wa.me/?text=${encodeURIComponent(`I'm sponsoring a girl's education this Women's Day through Ilika. Join my group — only ${left} spot${left !== 1 ? "s" : ""} left!\n${window.location.href}`)}`} target="_blank" rel="noopener noreferrer" style={{ background: "#25D366", color: "#fff", padding: "12px 24px", borderRadius: 8, fontSize: 14, fontWeight: 600, fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 8, textDecoration: "none", border: "none", cursor: "pointer" }}>💬 Share on WhatsApp</a>
