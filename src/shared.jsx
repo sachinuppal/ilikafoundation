@@ -6,7 +6,7 @@ import { getRecentTickerData } from "./dataService.js";
 // ===== COLOR PALETTE =====
 export const C = {
     bg: "#FDF6EE", bg2: "#FAF0E4", white: "#FFFFFF",
-    green: "#2D5016", greenL: "#3A6B1E", greenS: "#E8F0E2", greenM: "#5A7247",
+    green: "#1B3A5C", greenL: "#2A5A8C", greenS: "#E2EBF4", greenM: "#4A6E8A",
     gold: "#C8962E", goldL: "#D4A43A", goldS: "#FFF3DC",
     red: "#E53935", redS: "#FFEBEE",
     td: "#2C2C2C", tm: "#5C5549", tl: "#8A8175", tx: "#A89F93",
@@ -169,7 +169,7 @@ export function GirlsProgress() {
         <svg key={idx} width="32" height="40" viewBox="0 0 32 40" style={{ transition: "all 0.5s ease", filter: isColored ? "none" : "grayscale(100%) opacity(0.35)" }}>
             <circle cx="16" cy="12" r="8" fill={isColored ? C.gold : "#ccc"} />
             <path d="M16 22c-7 0-12 3-12 6v4h24v-4c0-3-5-6-12-6z" fill={isColored ? C.green : "#ddd"} />
-            <circle cx="16" cy="10" r="9" fill="none" stroke={isColored ? "#2D5016" : "#bbb"} strokeWidth="0.5" />
+            <circle cx="16" cy="10" r="9" fill="none" stroke={isColored ? "#1B3A5C" : "#bbb"} strokeWidth="0.5" />
             <path d="M8 8c0-6 4-8 8-8s8 2 8 8" fill={isColored ? "#1a1a1a" : "#bbb"} opacity={isColored ? 0.9 : 0.4} />
         </svg>
     );

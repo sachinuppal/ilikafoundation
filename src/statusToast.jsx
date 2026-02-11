@@ -5,9 +5,9 @@ const TOAST_DURATION = 6000; // auto-dismiss after 6 seconds
 
 const toastStyles = {
     success: {
-        bg: "linear-gradient(135deg, #2D5016, #4A7A2E)",
+        bg: "linear-gradient(135deg, #1B3A5C, #2A5A8C)",
         icon: "✅",
-        border: "#4A7A2E",
+        border: "#2A5A8C",
     },
     failed: {
         bg: "linear-gradient(135deg, #B44D12, #D97706)",

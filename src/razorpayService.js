@@ -66,8 +66,8 @@ export function openRazorpayCheckout({
             platform: "ilika-campaign",
         },
         theme: {
-            color: "#2D5016",
-            backdrop_color: "rgba(45, 80, 22, 0.15)",
+            color: "#1B3A5C",
+            backdrop_color: "rgba(27, 58, 92, 0.15)",
         },
         modal: {
             ondismiss: () => {
