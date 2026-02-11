@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { C, Heart, Users, Check, BookOpen, Back, GlobalStyles, backBtn } from "./shared.jsx";
 import { getAllGroups, getAllContributions, getRevenueStats, cancelSubscription, exportContributionsCSV } from "./dataService.js";
+import { generateReceiptFromContribution } from "./invoiceService.js";
 
 export default function AdminRoute() {
     const navigate = useNavigate();
@@ -197,7 +198,7 @@ export default function AdminRoute() {
                                     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                                         <thead>
                                             <tr style={{ borderBottom: `1px solid ${C.brdL}` }}>
-                                                {["Donor", "Email", "Type", "Amount", "Payment", "Razorpay ID", "Date"].map(h => <th key={h} style={th}>{h}</th>)}
+                                                {["Donor", "Email", "Type", "Amount", "Payment", "Razorpay ID", "Date", ""].map(h => <th key={h} style={th}>{h}</th>)}
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -210,6 +211,7 @@ export default function AdminRoute() {
                                                     <td style={td}><span style={{ color: c.payment_status === "Success" ? C.green : C.gold, fontWeight: 500, fontSize: 12 }}>{c.payment_status}</span></td>
                                                     <td style={{ ...td, color: C.tl, fontSize: 11, fontFamily: "monospace" }}>{c.razorpay_payment_id || "\u2014"}</td>
                                                     <td style={{ ...td, color: C.tl, fontSize: 12 }}>{c.created_at ? new Date(c.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : "\u2014"}</td>
+                                                    <td style={td}><button onClick={() => generateReceiptFromContribution(c)} style={{ background: "none", border: `1px solid ${C.brd}`, color: C.green, padding: "3px 8px", borderRadius: 4, fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>📄</button></td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -272,20 +274,23 @@ export default function AdminRoute() {
                                                         </td>
                                                         <td style={{ ...td, color: C.tl, fontSize: 11, fontFamily: "monospace" }}>{c.razorpay_payment_id || "\u2014"}</td>
                                                         <td style={td}>
-                                                            {isActive && (
-                                                                <button
-                                                                    onClick={() => handleCancel(c.id)}
-                                                                    disabled={cancelling === c.id}
-                                                                    style={{
-                                                                        background: "none", border: `1px solid #c0392b33`, color: "#c0392b",
-                                                                        padding: "3px 10px", borderRadius: 4, fontSize: 11, cursor: "pointer", fontFamily: "inherit",
-                                                                        opacity: cancelling === c.id ? 0.5 : 1,
-                                                                    }}
-                                                                >{cancelling === c.id ? "..." : "Cancel"}</button>
-                                                            )}
-                                                            {subStatus === "cancelled" && (
-                                                                <span style={{ fontSize: 11, color: C.tl }}>{c.cancelled_at ? new Date(c.cancelled_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : "Cancelled"}</span>
-                                                            )}
+                                                            <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                                                                <button onClick={() => generateReceiptFromContribution(c)} style={{ background: "none", border: `1px solid ${C.brd}`, color: C.green, padding: "3px 8px", borderRadius: 4, fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>📄</button>
+                                                                {isActive && (
+                                                                    <button
+                                                                        onClick={() => handleCancel(c.id)}
+                                                                        disabled={cancelling === c.id}
+                                                                        style={{
+                                                                            background: "none", border: `1px solid #c0392b33`, color: "#c0392b",
+                                                                            padding: "3px 10px", borderRadius: 4, fontSize: 11, cursor: "pointer", fontFamily: "inherit",
+                                                                            opacity: cancelling === c.id ? 0.5 : 1,
+                                                                        }}
+                                                                    >{cancelling === c.id ? "..." : "Cancel"}</button>
+                                                                )}
+                                                                {subStatus === "cancelled" && (
+                                                                    <span style={{ fontSize: 11, color: C.tl }}>{c.cancelled_at ? new Date(c.cancelled_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : "Cancelled"}</span>
+                                                                )}
+                                                            </div>
                                                         </td>
                                                     </tr>
                                                 );

@@ -8,6 +8,7 @@ import {
 } from "./shared.jsx";
 import { createIndividualContribution, createGroup, getCampaignStats, updatePaymentStatus } from "./dataService.js";
 import { openRazorpayCheckout, isRazorpayConfigured } from "./razorpayService.js";
+import { generateDonationReceipt } from "./invoiceService.js";
 
 export default function IlikaCampaign() {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ export default function IlikaCampaign() {
   const [stats, setStats] = useState({ totalSponsors: 127, girlsSponsored: 15, individualCount: 42, groupCount: 23 });
   const [submitting, setSubmitting] = useState(false);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
+  const [lastPayment, setLastPayment] = useState(null);
   const sponsorRef = useRef(null);
 
   useEffect(() => { setM(true); loadStats(); }, []);
@@ -57,6 +59,7 @@ export default function IlikaCampaign() {
           try {
             await updatePaymentStatus(contrib.id, response.razorpay_payment_id, "Success");
           } catch (e) { console.error("Failed to update payment status:", e); }
+          setLastPayment({ id: contrib.id, paymentId: response.razorpay_payment_id });
           setPaymentProcessing(false);
           setDone(true);
         },
@@ -334,12 +337,14 @@ export default function IlikaCampaign() {
             <div style={{ background: C.greenS, border: `1px solid ${C.green}22`, borderRadius: 16, padding: 40 }}>
               <div style={{ color: C.green, marginBottom: 12 }}><Check s={36} /></div>
               <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, marginBottom: 8, color: C.green }}>Thank You, {indF.name.split(" ")[0]}!</h3>
-              <p style={{ color: C.tm, fontSize: 14, lineHeight: 1.6, marginBottom: 12 }}>Redirecting to Razorpay for {indF.payment === "monthly" ? "\u20B98,000/month subscription" : "\u20B996,000 annual payment"}...</p>
+              <p style={{ color: C.tm, fontSize: 14, lineHeight: 1.6, marginBottom: 12 }}>Your payment of {indF.payment === "monthly" ? "\u20B98,000" : "\u20B996,000"} has been received. You are now sponsoring a girl's education!</p>
               <p style={{ color: C.tl, fontSize: 13, marginBottom: 16 }}>Tax receipt and fellowship updates will be sent to {indF.email}</p>
+              {/* Download Receipt Button */}
+              <button onClick={() => generateDonationReceipt({ donorName: indF.name, email: indF.email, phone: indF.phone, amount: indF.payment === "annual" ? 96000 : 8000, paymentId: lastPayment?.paymentId || "N/A", type: "individual", paymentPreference: indF.payment, date: new Date().toISOString(), contributionId: lastPayment?.id })} style={{ background: C.white, border: `1px solid ${C.green}44`, color: C.green, padding: "12px 28px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>\uD83D\uDCC4 Download 80G Receipt (PDF)</button>
               {/* Post-donation share prompt */}
-              <div style={{ background: C.white, borderRadius: 10, padding: "16px", border: `1px solid ${C.brdL}`, marginTop: 16 }}>
-                <p style={{ fontSize: 13, color: C.tm, marginBottom: 8, fontWeight: 500 }}>Double your impact — share with friends</p>
-                <button onClick={() => { const t = `I just sponsored a girl's education through Ilika Foundation this Women's Day! 🎓 You can too: ilikafoundation.org`; if (navigator.share) navigator.share({ text: t }); else navigator.clipboard?.writeText(t); }} style={{ background: `linear-gradient(135deg,${C.green},${C.greenL})`, color: C.white, border: "none", padding: "10px 24px", borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 6 }}><Share s={14} />Share on WhatsApp</button>
+              <div style={{ background: C.white, borderRadius: 10, padding: "16px", border: `1px solid ${C.brdL}`, marginTop: 8 }}>
+                <p style={{ fontSize: 13, color: C.tm, marginBottom: 8, fontWeight: 500 }}>Double your impact \u2014 share with friends</p>
+                <button onClick={() => { const t = `I just sponsored a girl's education through Ilika Foundation this Women's Day! \uD83C\uDF93 You can too: ilikafoundation.org`; if (navigator.share) navigator.share({ text: t }); else navigator.clipboard?.writeText(t); }} style={{ background: `linear-gradient(135deg,${C.green},${C.greenL})`, color: C.white, border: "none", padding: "10px 24px", borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 6 }}><Share s={14} />Share on WhatsApp</button>
               </div>
             </div>
           </section>
