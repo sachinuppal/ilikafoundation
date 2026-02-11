@@ -249,6 +249,7 @@ export function generateDonationReceipt({
         "2.  PAN is compulsory for issuance of 80G receipts",
         "3.  We have received a provisional 80g registration certificate that is valid till AY2027-28. We will apply for the final registration before the",
         "     validity of this certificate ends, as per prevailing regulations.",
+        "4.  Deduction under Section 80G is subject to verification from Form 10BE issued annually.",
     ];
     terms.forEach(line => {
         doc.text(line, margin, y);
