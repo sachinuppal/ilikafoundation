@@ -164,7 +164,7 @@ export default function IlikaCampaign() {
 
       <div style={{ position: "relative", zIndex: 1 }}>
         {/* Nav with Facepile */}
-        <nav style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 28px", maxWidth: 1100, margin: "0 auto" }}>
+        <nav style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 28px", maxWidth: 1100, margin: "0 auto" }}>
           <img src={ilikaLogo} alt="Ilika Foundation" style={{ height: 96, width: "auto" }} />
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <Facepile count={4} size={24} />
@@ -173,7 +173,7 @@ export default function IlikaCampaign() {
         </nav>
 
         {/* ============ HERO ============ */}
-        <section style={{ maxWidth: 1100, margin: "0 auto", padding: "40px 28px 32px", ...an(0) }}>
+        <section style={{ maxWidth: 1100, margin: "0 auto", padding: "16px 28px 32px", ...an(0) }}>
           <div style={{ display: "flex", alignItems: "center", gap: 48, flexWrap: "wrap" }}>
             {/* Left - Text content */}
             <div style={{ flex: "1 1 420px", minWidth: 320 }}>
