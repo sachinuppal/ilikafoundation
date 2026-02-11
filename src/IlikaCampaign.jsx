@@ -3,12 +3,14 @@ import { useNavigate } from "react-router-dom";
 import {
   C, Heart, Users, User, Check, Arrow, Leaf, Quote, Star, Shield, BookOpen,
   Handshake, TrendUp, Clock, Facepile, LiveTicker, GlobalStyles,
-  CampaignProgress, RecentSupporters, UrgencyBanner, ImpactCalculator,
+  CampaignProgress, RecentSupporters, UrgencyBanner, GirlsProgress, TopDonors,
   inp, lbl, Share
 } from "./shared.jsx";
 import { createIndividualContribution, createGroup, getCampaignStats, updatePaymentStatus } from "./dataService.js";
 import { openRazorpayCheckout, isRazorpayConfigured } from "./razorpayService.js";
 import { generateDonationReceipt } from "./invoiceService.js";
+import { StatusToast, ToastStyles, useToast } from "./statusToast.jsx";
+import { getContent, getContentJSON, loadContentFromDB } from "./siteContent.js";
 
 export default function IlikaCampaign() {
   const navigate = useNavigate();
@@ -17,15 +19,21 @@ export default function IlikaCampaign() {
   const [grpF, setGrpF] = useState({ name: "", email: "", phone: "" });
   const [done, setDone] = useState(false);
   const [m, setM] = useState(false);
-  const [stats, setStats] = useState({ totalSponsors: 127, girlsSponsored: 15, individualCount: 42, groupCount: 23 });
+  const [stats, setStats] = useState({
+    totalSponsors: Number(getContent("stats_total_sponsors_offset")) || 0,
+    girlsSponsored: Number(getContent("stats_girls_sponsored_offset")) || 0,
+    individualCount: Number(getContent("stats_individual_count_offset")) || 0,
+    groupCount: Number(getContent("stats_group_count_offset")) || 0,
+  });
   const [submitting, setSubmitting] = useState(false);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [lastPayment, setLastPayment] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showRetention, setShowRetention] = useState(false);
   const sponsorRef = useRef(null);
+  const { toast, showToast, showCustomToast, dismissToast } = useToast();
 
-  useEffect(() => { setM(true); loadStats(); }, []);
+  useEffect(() => { setM(true); loadContentFromDB().then(() => loadStats()); }, []);
 
   const scrollToSponsor = () => { sponsorRef.current?.scrollIntoView({ behavior: "smooth" }); };
 
@@ -33,10 +41,10 @@ export default function IlikaCampaign() {
     try {
       const s = await getCampaignStats();
       setStats({
-        totalSponsors: 127 + s.totalSponsors,
-        girlsSponsored: 15 + s.girlsSponsored,
-        individualCount: 42 + s.individualCount,
-        groupCount: 23 + s.groupCount,
+        totalSponsors: Number(getContent("stats_total_sponsors_offset")) + s.totalSponsors,
+        girlsSponsored: Number(getContent("stats_girls_sponsored_offset")) + s.girlsSponsored,
+        individualCount: Number(getContent("stats_individual_count_offset")) + s.individualCount,
+        groupCount: Number(getContent("stats_group_count_offset")) + s.groupCount,
       });
     } catch (e) { /* keep defaults */ }
   }
@@ -64,14 +72,17 @@ export default function IlikaCampaign() {
           setLastPayment({ id: contrib.id, paymentId: response.razorpay_payment_id });
           setPaymentProcessing(false);
           setDone(true);
+          showToast("payment_success");
         },
         onFailure: (err) => {
           setPaymentProcessing(false);
-          if (err.message !== "Payment cancelled by user") alert("Payment failed: " + err.message);
+          if (err.message !== "Payment cancelled by user") {
+            showToast("payment_failed");
+          }
         },
       });
     } catch (err) {
-      alert("Error: " + err.message);
+      showCustomToast("failed", "Submission Error", err.message);
       setSubmitting(false);
     }
   };
@@ -94,11 +105,14 @@ export default function IlikaCampaign() {
         paymentPreference: "monthly",
         onSuccess: async () => {
           setPaymentProcessing(false);
-          navigate(`/group/${group.slug}`);
+          showToast("payment_success");
+          setTimeout(() => navigate(`/group/${group.slug}`), 1500);
         },
         onFailure: (err) => {
           setPaymentProcessing(false);
-          if (err.message !== "Payment cancelled by user") alert("Payment failed: " + err.message);
+          if (err.message !== "Payment cancelled by user") {
+            showToast("payment_failed");
+          }
           // Still navigate to group page even if payment fails
           navigate(`/group/${group.slug}`);
         },
@@ -116,6 +130,8 @@ export default function IlikaCampaign() {
     <div style={{ minHeight: "100vh", background: C.bg, color: C.td, fontFamily: "'DM Sans', sans-serif", overflow: "hidden" }}>
       <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       <GlobalStyles />
+      <ToastStyles />
+      <StatusToast toast={toast} onDismiss={dismissToast} />
 
       {/* Ambient */}
       <div style={{ position: "fixed", inset: 0, pointerEvents: "none" }}>
@@ -139,17 +155,17 @@ export default function IlikaCampaign() {
             {/* Left - Text content */}
             <div style={{ flex: "1 1 420px", minWidth: 320 }}>
               <div style={{ marginBottom: 20 }}><LiveTicker /></div>
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "7px 20px", borderRadius: 24, background: C.greenS, marginBottom: 24, fontSize: 13, color: C.green, fontWeight: 500 }}><Leaf s={14} /> Women's Day Initiative 2025</div>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "7px 20px", borderRadius: 24, background: C.greenS, marginBottom: 24, fontSize: 13, color: C.green, fontWeight: 500 }}><Leaf s={14} /> {getContent("hero_tagline")}</div>
               <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(28px, 4vw, 46px)", lineHeight: 1.15, marginBottom: 20, fontWeight: 400, color: C.green }}>
-                She has the talent.<br />She has the dream.<br /><span style={{ fontStyle: "italic", color: C.gold }}>She just needs someone<br />to believe in her.</span>
+                {getContent("hero_heading_1")}<br />{getContent("hero_heading_2")}<br /><span style={{ fontStyle: "italic", color: C.gold }}>{getContent("hero_heading_3")}<br />{getContent("hero_heading_4")}</span>
               </h1>
               <p style={{ fontSize: "clamp(14px, 1.8vw, 17px)", lineHeight: 1.8, color: C.tm, maxWidth: 480, marginBottom: 28, fontWeight: 300 }}>
-                For millions of girls in India, the dream of education isn't stopped by a lack of ambition — it's stopped by a lack of access. This Women's Day, you can change that for one girl, forever.
+                {getContent("hero_description")}
               </p>
-              {/* Hero CTAs with pricing */}
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 24 }}>
-                <button onClick={() => { setOpt(1); setDone(false); scrollToSponsor(); }} style={{ background: `linear-gradient(135deg,${C.gold},${C.goldL})`, color: C.white, border: "none", padding: "14px 32px", borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 8, boxShadow: `0 4px 20px ${C.gold}33` }}>Sponsor a Girl — {"\u20B9"}8,000/mo <Arrow /></button>
-                <button onClick={() => { setOpt(2); setDone(false); scrollToSponsor(); }} style={{ background: C.white, color: C.green, border: `2px solid ${C.green}`, padding: "14px 32px", borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 8 }}>Split with Friends — {"\u20B9"}2,000/mo <Users s={16} /></button>
+              {/* Hero CTAs with pricing — equal width, side by side */}
+              <div style={{ display: "flex", gap: 12, marginBottom: 24 }}>
+                <button onClick={() => { setOpt(1); setDone(false); setShowModal(true); setShowRetention(false); scrollToSponsor(); }} style={{ flex: 1, background: `linear-gradient(135deg,${C.gold},${C.goldL})`, color: C.white, border: "none", padding: "14px 16px", borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: `0 4px 20px ${C.gold}33`, whiteSpace: "nowrap" }}>Sponsor a Girl — {"\u20B9"}8,000/mo <Arrow /></button>
+                <button onClick={() => { setOpt(2); setDone(false); setShowModal(true); setShowRetention(false); scrollToSponsor(); }} style={{ flex: 1, background: C.white, color: C.green, border: `2px solid ${C.green}`, padding: "14px 16px", borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, whiteSpace: "nowrap" }}>Split with Friends — {"\u20B9"}2,000/mo <Users s={16} /></button>
               </div>
               <p style={{ fontSize: 12, color: C.tl, marginBottom: 16 }}>80G tax exemption {"\u00B7"} Secure Razorpay {"\u00B7"} Cancel anytime</p>
               <Facepile count={7} size={34} label={<span><strong style={{ color: C.td }}>{stats.totalSponsors} sponsors</strong> have already joined</span>} />
@@ -157,7 +173,7 @@ export default function IlikaCampaign() {
             {/* Right - Hero image */}
             <div style={{ flex: "1 1 340px", minWidth: 280, maxWidth: 440, position: "relative" }}>
               <div style={{ borderRadius: 24, overflow: "hidden", boxShadow: "0 8px 40px rgba(45,80,22,0.12)", border: `3px solid ${C.white}`, position: "relative" }}>
-                <img src="https://static.wixstatic.com/media/e3859a_09bd59c846ab436e91d393ae5718133b~mv2.jpeg/v1/fill/w_720,h_884,al_c,q_85,enc_avif,quality_auto/e3859a_09bd59c846ab436e91d393ae5718133b~mv2.jpeg" alt="Ilika Fellow" style={{ width: "100%", height: "auto", display: "block", objectFit: "cover" }} />
+                <img src={getContent("hero_image_url")} alt="Ilika Fellow" style={{ width: "100%", height: "auto", display: "block", objectFit: "cover" }} />
                 <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "linear-gradient(transparent, rgba(45,80,22,0.85))", padding: "48px 24px 20px", color: C.white }}>
                   <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>Her story can change.</div>
                   <div style={{ fontSize: 12, opacity: 0.85 }}>With your support, she'll rise.</div>
@@ -169,9 +185,10 @@ export default function IlikaCampaign() {
           </div>
         </section>
 
-        {/* ============ CAMPAIGN PROGRESS + URGENCY ============ */}
+        {/* ============ CAMPAIGN PROGRESS + URGENCY + GIRLS TICKER ============ */}
         <section style={{ ...secStyle, padding: "16px 28px", ...an(0.08) }}>
           <CampaignProgress />
+          <GirlsProgress />
           <div style={{ marginTop: 12 }}><UrgencyBanner /></div>
         </section>
 
@@ -181,21 +198,37 @@ export default function IlikaCampaign() {
             <div style={{ position: "absolute", top: 20, right: 24, color: C.green }}><Quote s={48} /></div>
             <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 2, color: C.gold, fontWeight: 600, marginBottom: 16 }}>How It Started</div>
             <p style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(18px, 2.5vw, 24px)", lineHeight: 1.6, color: C.green, marginBottom: 20, fontWeight: 400, maxWidth: 600 }}>
-              At 17, three friends came together with a simple belief: if opportunity had reached us, it was our duty to extend it to those it hadn't.
+              {getContent("origin_para_1")}
             </p>
             <p style={{ fontSize: 15, lineHeight: 1.8, color: C.tm, marginBottom: 16 }}>
-              What began as pooling their own pocket money to help one child get to school has grown into Ilika — an ecosystem where support is not charity, but justice. Today, Akshay, Malay, and Anisha stand beside young people from underserved communities, providing not just tuition fees, but mentorship, tools, networks, and the opportunities that talent alone cannot unlock.
+              {getContent("origin_para_2")}
             </p>
             <p style={{ fontSize: 15, lineHeight: 1.8, color: C.tm, marginBottom: 0, fontStyle: "italic" }}>
-              Because when one child rises, the cycle of opportunity begins — and generational poverty starts to end.
+              {getContent("origin_para_3")}
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginTop: 24, paddingTop: 24, borderTop: `1px solid ${C.brdL}` }}>
-              {[{ n: "Akshay Lalchandani", r: "Co-founder & CEO", img: "https://static.wixstatic.com/media/e3859a_0039d3cb70cd479f8e1ee08da1ca3c66~mv2.jpg/v1/crop/x_77,y_130,w_1385,h_1309/fill/w_403,h_381,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/IMG_3512_JPG.jpg" }, { n: "Malay Shah", r: "Co-founder & CFO", img: "https://static.wixstatic.com/media/e3859a_2d6ab1fbf7f5407fac701951477e7cf7~mv2.jpg/v1/crop/x_0,y_22,w_1536,h_1453/fill/w_403,h_381,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/IMG_3545_JPG.jpg" }, { n: "Anisha Patnaik", r: "Co-founder", img: "https://static.wixstatic.com/media/db90ba_5a1b1cc1de514e6db830bde94648446b~mv2.jpg/v1/crop/x_0,y_29,w_1080,h_1021/fill/w_403,h_381,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/Anisha.jpg" }].map((f, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <img src={f.img} alt={f.n} style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", border: `2px solid ${C.brdL}` }} />
-                  <div><div style={{ fontSize: 13, fontWeight: 600, color: C.td }}>{f.n}</div><div style={{ fontSize: 11, color: C.tl }}>{f.r}</div></div>
-                </div>
-              ))}
+              {(() => {
+                const linkedInMap = {
+                  "Akshay Lalchandani": "https://www.linkedin.com/in/akshay-lalchandani-6676b3147/",
+                  "Malay Shah": "https://www.linkedin.com/in/malay-samir-shah/",
+                  "Anisha Patnaik": "https://www.linkedin.com/in/anishapatnaik/",
+                };
+                return getContentJSON("founders").map((f, i) => {
+                  const li = linkedInMap[f.name] || f.linkedin || null;
+                  return (
+                    <a key={i} href={li || "#"} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none", cursor: li ? "pointer" : "default" }}>
+                      <img src={f.img} alt={f.name} style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", border: `2px solid ${C.brdL}` }} />
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: C.td, display: "flex", alignItems: "center", gap: 4 }}>
+                          {f.name}
+                          {li && <svg width="14" height="14" viewBox="0 0 24 24" fill="#0A66C2" style={{ flexShrink: 0 }}><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" /></svg>}
+                        </div>
+                        <div style={{ fontSize: 11, color: C.tl }}>{f.role}</div>
+                      </div>
+                    </a>
+                  );
+                });
+              })()}
             </div>
           </div>
         </section>
@@ -208,12 +241,7 @@ export default function IlikaCampaign() {
             <p style={{ fontSize: 15, lineHeight: 1.8, color: C.tm, maxWidth: 560, margin: "0 auto" }}>Less than 29% of Indian youth enroll in higher education. For girls from low-income families, the barriers go far beyond tuition — it's the absence of mentorship, technology, exposure, and someone who says "you belong here."</p>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 16 }}>
-            {[
-              { num: "250M+", label: "youth population", sub: "India's largest untapped potential" },
-              { num: "71%", label: "never reach college", sub: "Gross Enrollment Ratio: 28.4%" },
-              { num: "\u20B975K", label: "avg. annual tuition", sub: "Unaffordable for most families" },
-              { num: "\u20B98K", label: "/mo changes everything", sub: "Education + mentorship + career" },
-            ].map((d, i) => (
+            {getContentJSON("opportunity_gap_stats").map((d, i) => (
               <div key={i} style={{ background: C.white, borderRadius: 14, padding: "20px 16px", border: `1px solid ${C.brdL}`, textAlign: "center" }}>
                 <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 28, color: i === 3 ? C.gold : C.green, fontWeight: 600, marginBottom: 4 }}>{d.num}</div>
                 <div style={{ fontSize: 13, color: C.td, fontWeight: 500, marginBottom: 4, lineHeight: 1.4 }}>{d.label}</div>
@@ -229,9 +257,9 @@ export default function IlikaCampaign() {
             <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 2, color: C.gold, fontWeight: 600, marginBottom: 12 }}>The Ilika Fellowship</div>
             <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(22px, 3.5vw, 32px)", lineHeight: 1.25, color: C.green, marginBottom: 16 }}>You're not paying for a degree.<br />You're building an ecosystem around her.</h2>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16 }}>
             {[
-              { icon: <BookOpen s={22} />, title: "Guided", desc: "Paired with a dedicated buddy mentor through every challenge and milestone of her undergraduate journey.", color: C.green },
+              { icon: <BookOpen s={22} />, title: "Guided", desc: "Paired with a dedicated guide through every challenge and milestone of her undergraduate journey.", color: C.green },
               { icon: <Heart s={22} />, title: "Nurtured", desc: "Beyond tuition — learning tools, life skills coaching, well-being support, and holistic development.", color: C.gold },
               { icon: <Users s={22} />, title: "Connected", desc: "Lifelong access to mentors, experts, and industry leaders. Doors that talent alone cannot open.", color: C.greenM },
               { icon: <TrendUp s={22} />, title: "Empowered", desc: "Career training, internships, and real-world exposure. She graduates ready to lead.", color: "#6B8B9E" },
@@ -246,12 +274,12 @@ export default function IlikaCampaign() {
           {/* Karmic Pledge */}
           <div style={{ marginTop: 20, background: `linear-gradient(135deg,${C.green},${C.greenL})`, borderRadius: 14, padding: "24px 28px", color: C.white, textAlign: "center" }}>
             <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 2, opacity: 0.7, marginBottom: 8 }}>The Karmic Pledge</div>
-            <p style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(15px, 2vw, 19px)", lineHeight: 1.6, margin: 0, fontWeight: 400, fontStyle: "italic", maxWidth: 500, marginLeft: "auto", marginRight: "auto" }}>"We don't pay gratitude back. We pay it forward — turning a stranger's kindness into someone else's chance."</p>
-            <p style={{ fontSize: 12, marginTop: 10, opacity: 0.75 }}>Every Fellow pledges to support a future student. Your sponsorship starts a chain that never ends.</p>
+            <p style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(15px, 2vw, 19px)", lineHeight: 1.6, margin: 0, fontWeight: 400, fontStyle: "italic", maxWidth: 500, marginLeft: "auto", marginRight: "auto" }}>"{getContent("karmic_pledge_quote")}"</p>
+            <p style={{ fontSize: 12, marginTop: 10, opacity: 0.75 }}>{getContent("karmic_pledge_sub")}</p>
           </div>
         </section>
 
-        {/* ============ TESTIMONIAL + RECENT SUPPORTERS ============ */}
+        {/* ============ TESTIMONIAL + TOP DONORS + RECENT SUPPORTERS ============ */}
         <section style={{ ...secStyle, padding: "48px 28px", ...an(0.24) }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 20 }}>
             {/* Testimonial */}
@@ -259,37 +287,30 @@ export default function IlikaCampaign() {
               <div style={{ position: "absolute", top: 16, left: 20, color: C.gold }}><Quote s={36} /></div>
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
                 <div style={{ width: 44, height: 44, borderRadius: "50%", background: C.gold, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 16, fontWeight: 600 }}>K</div>
-                <div><div style={{ fontWeight: 600, color: C.td }}>Komal Gupta</div><div style={{ fontSize: 12, color: C.tl }}>Ilika Fellow</div></div>
+                <div><div style={{ fontWeight: 600, color: C.td }}>{getContent("testimonial_name")}</div><div style={{ fontSize: 12, color: C.tl }}>{getContent("testimonial_role")}</div></div>
                 <div style={{ marginLeft: "auto", display: "flex", gap: 2, color: C.gold }}>{[1, 2, 3, 4, 5].map(i => <Star key={i} />)}</div>
               </div>
-              <p style={{ fontFamily: "'Playfair Display', serif", fontSize: 16, lineHeight: 1.7, color: C.green, marginBottom: 12 }}>"My buddy has been deeply involved in guiding me, helping me discover my strengths, and providing me with the right direction."</p>
-              <p style={{ fontSize: 13, lineHeight: 1.7, color: C.tm, marginBottom: 12 }}>Through Ilika's mentorship, Komal received internship opportunities and was encouraged to pursue real-world projects. She went from being unsure about her future to confidently pursuing her dream career.</p>
-              <div style={{ padding: "10px 14px", background: C.greenS, borderRadius: 8, fontSize: 12, color: C.green, fontStyle: "italic" }}>"I feel proud and thankful to be a part of Ilika."</div>
+              <p style={{ fontFamily: "'Playfair Display', serif", fontSize: 16, lineHeight: 1.7, color: C.green, marginBottom: 12 }}>"{getContent("testimonial_quote")}"</p>
+              <p style={{ fontSize: 13, lineHeight: 1.7, color: C.tm, marginBottom: 12 }}>{getContent("testimonial_story")}</p>
+              <div style={{ padding: "10px 14px", background: C.greenS, borderRadius: 8, fontSize: 12, color: C.green, fontStyle: "italic" }}>"{getContent("testimonial_closing")}"</div>
             </div>
-            {/* Recent supporters feed */}
-            <div style={{ background: C.white, borderRadius: 16, padding: "28px 24px", border: `1px solid ${C.brdL}` }}>
-              <RecentSupporters />
+            {/* Top Donors + Recent Supporters */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              <div style={{ background: C.white, borderRadius: 16, padding: "24px 24px", border: `1px solid ${C.brdL}` }}>
+                <TopDonors />
+              </div>
+              <div style={{ background: C.white, borderRadius: 16, padding: "24px 24px", border: `1px solid ${C.brdL}` }}>
+                <RecentSupporters limit={5} />
+              </div>
             </div>
           </div>
         </section>
 
-        {/* ============ IMPACT CALCULATOR ============ */}
-        <section style={{ ...secStyle, padding: "32px 28px", ...an(0.26) }}>
-          <ImpactCalculator />
-        </section>
-
-        {/* ============ TRUST SIGNALS ============ */}
+        {/* ============ TRUST SIGNALS — 80G + Section 8 only ============ */}
         <section style={{ ...secStyle, padding: "24px 28px", ...an(0.28) }}>
-          <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 10 }}>
-            {[
-              { icon: <Shield s={14} />, text: "80G Tax Exemption" },
-              { icon: <Check s={14} />, text: "Section 8 Registered" },
-              { icon: <BookOpen s={14} />, text: "Audited Financials" },
-              { icon: <Heart s={14} />, text: `${stats.girlsSponsored}+ Fellows in ecosystem` },
-              { icon: <Handshake s={14} />, text: "Karmic Pledge cycle" },
-            ].map((t, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", borderRadius: 20, background: C.white, border: `1px solid ${C.brdL}`, fontSize: 12, color: C.tm }}><span style={{ color: C.green }}>{t.icon}</span>{t.text}</div>
-            ))}
+          <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 12 }}>
+            <a href="https://www.ilikafoundation.org/_files/ugd/e3859a_b8ae915404fb40db8afd8324792046b1.pdf" target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 18px", borderRadius: 20, background: C.white, border: `1px solid ${C.brdL}`, fontSize: 13, color: C.green, textDecoration: "none", fontWeight: 500 }}><Shield s={14} /> 80G Tax Exemption Certificate</a>
+            <a href="https://www.ilikafoundation.org/_files/ugd/e3859a_d1f4bc28f83841bea4a53b820354e49d.pdf" target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 18px", borderRadius: 20, background: C.white, border: `1px solid ${C.brdL}`, fontSize: 13, color: C.green, textDecoration: "none", fontWeight: 500 }}><Check s={14} /> Section 8 Registration</a>
           </div>
         </section>
 
@@ -315,9 +336,6 @@ export default function IlikaCampaign() {
                 <div style={{ paddingTop: 12, borderTop: `1px solid ${C.brdL}` }}><Facepile count={o.o === 1 ? 4 : 5} size={22} label={o.sponsors} /></div>
               </div>
             ))}
-          </div>
-          <div style={{ background: C.white, borderRadius: 10, padding: "12px 20px", border: `1px solid ${C.brdL}`, textAlign: "center" }}>
-            <p style={{ fontSize: 13, color: C.tm, margin: 0 }}>{"\u20B9"}8,000/mo covers tuition + mentor + tools + career training + network access — <strong style={{ color: C.green }}>the full Ilika ecosystem</strong></p>
           </div>
         </section>
 
@@ -365,7 +383,7 @@ export default function IlikaCampaign() {
                 </div>
               )}
 
-              {/* Individual Success */}
+              {/* Individual Success — Enhanced with WhatsApp share + referral */}
               {opt === 1 && done && (
                 <div style={{ background: C.greenS, border: `1px solid ${C.green}22`, borderRadius: 20, padding: 40, textAlign: "center", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
                   <button onClick={() => { setShowModal(false); setOpt(null); setDone(false); }} style={{ position: "absolute", top: 14, right: 14, zIndex: 10, width: 32, height: 32, borderRadius: "50%", background: "rgba(0,0,0,0.06)", border: "none", fontSize: 18, cursor: "pointer", color: C.tl, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>×</button>
@@ -374,9 +392,14 @@ export default function IlikaCampaign() {
                   <p style={{ color: C.tm, fontSize: 14, lineHeight: 1.6, marginBottom: 12 }}>Your payment of {indF.payment === "monthly" ? "\u20B98,000" : "\u20B996,000"} has been received. You are now sponsoring a girl's education!</p>
                   <p style={{ color: C.tl, fontSize: 13, marginBottom: 16 }}>Tax receipt and fellowship updates will be sent to {indF.email}</p>
                   <button onClick={() => generateDonationReceipt({ donorName: indF.name, email: indF.email, phone: indF.phone, amount: indF.payment === "annual" ? 96000 : 8000, paymentId: lastPayment?.paymentId || "N/A", type: "individual", paymentPreference: indF.payment, date: new Date().toISOString(), contributionId: lastPayment?.id })} style={{ background: C.white, border: `1px solid ${C.green}44`, color: C.green, padding: "12px 28px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>\uD83D\uDCC4 Download 80G Receipt (PDF)</button>
-                  <div style={{ background: C.white, borderRadius: 10, padding: "16px", border: `1px solid ${C.brdL}`, marginTop: 8 }}>
-                    <p style={{ fontSize: 13, color: C.tm, marginBottom: 8, fontWeight: 500 }}>Double your impact \u2014 share with friends</p>
-                    <button onClick={() => { const t = `I just sponsored a girl's education through Ilika Foundation this Women's Day! \uD83C\uDF93 You can too: ilikafoundation.org`; if (navigator.share) navigator.share({ text: t }); else navigator.clipboard?.writeText(t); }} style={{ background: `linear-gradient(135deg,${C.green},${C.greenL})`, color: C.white, border: "none", padding: "10px 24px", borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 6 }}><Share s={14} />Share on WhatsApp</button>
+                  {/* Share + Referral CTA */}
+                  <div style={{ background: C.white, borderRadius: 12, padding: "20px", border: `1px solid ${C.brdL}`, marginTop: 12 }}>
+                    <p style={{ fontSize: 15, color: C.green, marginBottom: 4, fontWeight: 600, fontFamily: "'Playfair Display', serif" }}>Multiply your impact</p>
+                    <p style={{ fontSize: 13, color: C.tm, marginBottom: 16, lineHeight: 1.5 }}>Share this with your friends and family — invite them to sponsor a girl or start their own group campaign.</p>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      <a href={`https://wa.me/?text=${encodeURIComponent(`I just sponsored a girl's education through Ilika Foundation! 🎓 This Women's Day, you can change a girl's future too — just ₹8,000/mo or ₹2,000/mo with friends.\n\nJoin here: ${window.location.origin}`)}`} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "#25D366", color: C.white, border: "none", padding: "12px 24px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", textDecoration: "none" }}>💬 Share on WhatsApp</a>
+                      <button onClick={() => { setDone(false); setOpt(2); }} style={{ background: C.white, border: `2px solid ${C.green}`, color: C.green, padding: "12px 24px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}><Users s={16} /> Start a Group Campaign</button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -412,13 +435,7 @@ export default function IlikaCampaign() {
         {/* ============ FAQ / OBJECTION HANDLING ============ */}
         <section style={{ ...secStyle, padding: "0 28px 48px", ...an(0.38) }}>
           <div style={{ textAlign: "center", marginBottom: 24 }}><h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, color: C.green }}>Common Questions</h3></div>
-          {[
-            { q: "Where does my money go?", a: "100% funds the Ilika Fellowship — tuition, mentorship, learning tools, career training, and network access for one girl. Ilika publishes audited financials annually." },
-            { q: "Do I get a tax benefit?", a: "Yes. All donations qualify for 80G tax exemption. You'll receive your certificate immediately after payment. 50% of your donation is deductible from taxable income." },
-            { q: "Can I cancel anytime?", a: "Yes. Your Razorpay subscription can be cancelled at any point. We hope you'll stay, but there's zero lock-in." },
-            { q: "How is this different from other donation platforms?", a: "You're not just paying fees. You're funding an entire ecosystem — a personal mentor, career training, internships, professional networks. And every Fellow takes the Karmic Pledge to pay it forward." },
-            { q: "How will I know my sponsorship is making a difference?", a: "You'll receive regular progress updates, milestone reports, and direct impact stories from the Fellow your sponsorship supports." },
-          ].map((faq, i) => (
+          {getContentJSON("faq_items").map((faq, i) => (
             <details key={i} style={{ background: C.white, borderRadius: 10, border: `1px solid ${C.brdL}`, marginBottom: 8, cursor: "pointer" }}>
               <summary style={{ padding: "16px 20px", fontSize: 14, fontWeight: 600, color: C.td, listStyle: "none", display: "flex", justifyContent: "space-between", alignItems: "center" }}>{faq.q}<span style={{ color: C.tl, fontSize: 18, fontWeight: 300 }}>+</span></summary>
               <div style={{ padding: "0 20px 16px", fontSize: 14, lineHeight: 1.7, color: C.tm }}>{faq.a}</div>
@@ -429,18 +446,18 @@ export default function IlikaCampaign() {
         {/* Footer */}
         <footer style={{ textAlign: "center", padding: "40px 28px", borderTop: `1px solid ${C.brdL}` }}>
           <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, color: C.green, marginBottom: 8, fontWeight: 700 }}>ilika</div>
-          <p style={{ color: C.tx, fontSize: 12, marginBottom: 4 }}>Adopt Her Future — Women's Day Initiative</p>
-          <p style={{ color: C.tx, fontSize: 11 }}>{"\u00A9"} 2025 Twelve Ten Empowering Possibilities Foundation {"\u00B7"} Section 8 {"\u00B7"} 80G Registered</p>
+          <p style={{ color: C.tx, fontSize: 12, marginBottom: 4 }}>{getContent("footer_tagline")}</p>
+          <p style={{ color: C.tx, fontSize: 11 }}>{getContent("footer_org")}</p>
         </footer>
       </div>
 
       {/* ============ STICKY BOTTOM CTA BAR ============ */}
       <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: C.white, borderTop: `1px solid ${C.brd}`, padding: "10px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, zIndex: 100, boxShadow: "0 -2px 12px rgba(0,0,0,0.06)" }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 12, color: C.tl }}>{stats.totalSponsors} sponsors {"\u00B7"} 18 days left</div>
+          <div style={{ fontSize: 12, color: C.tl }}>{stats.totalSponsors} sponsors {"\u00B7"} {Number(getContent("campaign_days_left"))} days left</div>
           <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 16, color: C.green, fontWeight: 600 }}>From {"\u20B9"}2,000/mo</div>
         </div>
-        <button onClick={() => { setOpt(opt || 1); setDone(false); scrollToSponsor(); }} style={{ background: `linear-gradient(135deg,${C.gold},${C.goldL})`, color: C.white, border: "none", padding: "12px 28px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap", boxShadow: `0 2px 12px ${C.gold}33` }}>Sponsor Now</button>
+        <button onClick={() => { setOpt(opt || 1); setDone(false); setShowModal(true); setShowRetention(false); scrollToSponsor(); }} style={{ background: `linear-gradient(135deg,${C.gold},${C.goldL})`, color: C.white, border: "none", padding: "12px 28px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap", boxShadow: `0 2px 12px ${C.gold}33` }}>Sponsor Now</button>
       </div>
       {/* Bottom padding for sticky bar */}
       <div style={{ height: 60 }} />

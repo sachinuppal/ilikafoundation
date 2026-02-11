@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { C, Check, Users, Share, Arrow, Back, Clock, Facepile, GlobalStyles, inp, lbl, backBtn } from "./shared.jsx";
 import { getGroupBySlug, joinGroup, updatePaymentStatus } from "./dataService.js";
 import { openRazorpayCheckout } from "./razorpayService.js";
+import { StatusToast, ToastStyles, useToast } from "./statusToast.jsx";
 
 export default function GroupPageRoute() {
     const { slug } = useParams();
@@ -13,6 +14,7 @@ export default function GroupPageRoute() {
     const [showForm, setShowForm] = useState(false);
     const [form, setForm] = useState({ name: "", email: "", phone: "" });
     const [submitted, setSubmitted] = useState(false);
+    const { toast, showToast, showCustomToast, dismissToast } = useToast();
 
     useEffect(() => {
         loadGroup();
@@ -51,6 +53,7 @@ export default function GroupPageRoute() {
                     setGroup(updated);
                     setSubmitted(true);
                     setShowForm(false);
+                    showToast("payment_success");
                 },
                 onFailure: (err) => {
                     setGroup(updated);
@@ -62,7 +65,7 @@ export default function GroupPageRoute() {
                 },
             });
         } catch (err) {
-            alert("Error joining group: " + err.message);
+            showCustomToast("failed", "Join Error", err.message);
         }
     };
 
@@ -92,6 +95,8 @@ export default function GroupPageRoute() {
         <div style={{ minHeight: "100vh", background: C.bg, color: C.td, fontFamily: "'DM Sans', sans-serif" }}>
             <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
             <GlobalStyles />
+            <ToastStyles />
+            <StatusToast toast={toast} onDismiss={dismissToast} />
             <div style={{ position: "fixed", top: 0, left: 0, right: 0, height: 350, background: `linear-gradient(180deg, ${C.green}0A 0%, transparent 100%)`, pointerEvents: "none" }} />
             <div style={{ maxWidth: 600, margin: "0 auto", padding: "40px 24px", position: "relative" }}>
                 <button onClick={() => navigate("/")} style={{ ...backBtn, marginBottom: 40 }}><Back /> Back to Campaign</button>

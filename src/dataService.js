@@ -279,11 +279,12 @@ export async function exportContributionsCSV() {
         ? (await supabase.from("contributions").select("*").order("created_at", { ascending: false })).data || []
         : [...memContribs];
 
-    const headers = ["ID", "Donor Name", "Email", "Phone", "Company", "Type", "Amount", "Payment Preference", "Payment Status", "Razorpay Payment ID", "Subscription Status", "Group ID", "Created At"];
+    const headers = ["ID", "Donor Name", "Email", "Phone", "Company", "Type", "Amount", "Payment Preference", "Payment Status", "Subscription Status", "Razorpay Payment ID", "Dispute Status", "Refund Status", "Retry Count", "Group ID", "Created At"];
     const rows = contribs.map(c => [
         c.id, c.donor_name, c.email, c.phone || "", c.company || "", c.type,
         c.amount || 0, c.payment_preference || "", c.payment_status,
-        c.razorpay_payment_id || "", c.subscription_status || "active",
+        c.subscription_status || "pending", c.razorpay_payment_id || "",
+        c.dispute_status || "", c.refund_status || "", c.retry_count || 0,
         c.group_id || "", c.created_at || "",
     ]);
 
@@ -295,4 +296,48 @@ export async function exportContributionsCSV() {
     a.download = `ilika-contributions-${new Date().toISOString().split("T")[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+}
+
+// ===== WEBHOOK EVENT LOG =====
+export async function getWebhookEvents(limit = 50, eventTypeFilter = null) {
+    if (isSupabaseConfigured) {
+        let query = supabase.from("webhook_events").select("*").order("created_at", { ascending: false }).limit(limit);
+        if (eventTypeFilter) query = query.ilike("event_type", `%${eventTypeFilter}%`);
+        const { data, error } = await query;
+        if (error) throw error;
+        return data || [];
+    }
+    return [];
+}
+
+// ===== FAILED & DISPUTED PAYMENTS =====
+export async function getFailedPayments() {
+    if (isSupabaseConfigured) {
+        const { data, error } = await supabase.from("contributions").select("*")
+            .eq("payment_status", "Failed").order("created_at", { ascending: false });
+        if (error) throw error;
+        return data || [];
+    }
+    return memContribs.filter(c => c.payment_status === "Failed");
+}
+
+export async function getDisputedPayments() {
+    if (isSupabaseConfigured) {
+        const { data, error } = await supabase.from("contributions").select("*")
+            .not("dispute_status", "is", null).order("created_at", { ascending: false });
+        if (error) throw error;
+        return data || [];
+    }
+    return [];
+}
+
+// ===== EMAIL LOG =====
+export async function getEmailLogs(limit = 50) {
+    if (isSupabaseConfigured) {
+        const { data, error } = await supabase.from("email_logs").select("*")
+            .order("created_at", { ascending: false }).limit(limit);
+        if (error) throw error;
+        return data || [];
+    }
+    return [];
 }

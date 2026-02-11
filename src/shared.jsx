@@ -1,5 +1,6 @@
 // Shared constants, icons, and components used across pages
 import { useState, useEffect } from "react";
+import { getContent, getContentJSON } from "./siteContent.js";
 
 // ===== COLOR PALETTE =====
 export const C = {
@@ -51,20 +52,16 @@ export function Facepile({ count = 5, size = 32, label, names }) {
 export function LiveTicker() {
     const [idx, setIdx] = useState(0);
     const [show, setShow] = useState(true);
-    const activities = [
-        { name: "Priya S.", action: "sponsored a girl's education", time: "2 min ago", city: "Mumbai", amount: "\u20B98,000" },
-        { name: "Rahul & 3 friends", action: "completed a group sponsorship", time: "8 min ago", city: "Delhi", amount: "\u20B98,000" },
-        { name: "Sneha M.", action: "started a new group", time: "14 min ago", city: "Bangalore", amount: "\u20B92,000" },
-        { name: "Arjun K.", action: "chose annual sponsorship", time: "19 min ago", city: "Pune", amount: "\u20B996,000" },
-        { name: "Meera & friends", action: "completed a group sponsorship", time: "25 min ago", city: "Chennai", amount: "\u20B98,000" },
-        { name: "A corporate team", action: "sponsored 3 girls", time: "31 min ago", city: "Hyderabad", amount: "\u20B924,000" },
-    ];
-    useEffect(() => { const t = setInterval(() => { setShow(false); setTimeout(() => { setIdx(p => (p + 1) % activities.length); setShow(true); }, 300); }, 4500); return () => clearInterval(t); }, []);
-    const a = activities[idx];
+    const activities = getContentJSON("live_ticker");
+    const len = Array.isArray(activities) ? activities.length : 0;
+    useEffect(() => { if (len < 2) return; const t = setInterval(() => { setShow(false); setTimeout(() => { setIdx(p => (p + 1) % len); setShow(true); }, 300); }, 4500); return () => clearInterval(t); }, [len]);
+    if (len === 0) return null;
+    const a = activities[idx % len];
+    if (!a) return null;
     return (
         <div style={{ display: "inline-flex", alignItems: "center", gap: 10, padding: "8px 18px", borderRadius: 24, background: C.white, border: `1px solid ${C.brdL}`, fontSize: 13, color: C.tm, boxShadow: "0 2px 12px rgba(0,0,0,0.06)", transition: "all 0.3s", opacity: show ? 1 : 0, transform: show ? "translateY(0)" : "translateY(-8px)", maxWidth: "100%" }}>
             <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#4CAF50", flexShrink: 0, animation: "pulse 2s infinite" }} />
-            <span><strong style={{ color: C.td }}>{a.name}</strong> from {a.city} {a.action} <span style={{ color: C.tx }}>\u00B7 {a.time}</span></span>
+            <span><strong style={{ color: C.td }}>{a.name}</strong> from {a.city} {a.action} <span style={{ color: C.tx }}>{"\u00B7"} {a.time}</span></span>
         </div>
     );
 }
@@ -76,8 +73,12 @@ export const backBtn = { background: "none", border: "none", color: C.green, cur
 
 // ===== NEW KETTO-INSPIRED COMPONENTS =====
 
-export function CampaignProgress({ raised = 1016000, goal = 2400000, supporters = 127, daysLeft = 18 }) {
-    const pct = Math.min((raised / goal) * 100, 100);
+export function CampaignProgress({ raised, goal, supporters, daysLeft }) {
+    const r = raised ?? Number(getContent("campaign_raised"));
+    const g = goal ?? Number(getContent("campaign_goal"));
+    const s = supporters ?? Number(getContent("campaign_supporters"));
+    const d = daysLeft ?? Number(getContent("campaign_days_left"));
+    const pct = Math.min((r / g) * 100, 100);
     const [animated, setAnimated] = useState(0);
     useEffect(() => { const t = setTimeout(() => setAnimated(pct), 500); return () => clearTimeout(t); }, [pct]);
     return (
@@ -85,10 +86,10 @@ export function CampaignProgress({ raised = 1016000, goal = 2400000, supporters 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 12 }}>
                 <div>
                     <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1.5, color: C.tl, marginBottom: 4 }}>Raised so far</div>
-                    <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 32, color: C.green, fontWeight: 600 }}>{"\u20B9"}{raised.toLocaleString("en-IN")}</div>
+                    <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 32, color: C.green, fontWeight: 600 }}>{"\u20B9"}{r.toLocaleString("en-IN")}</div>
                 </div>
                 <div style={{ textAlign: "right" }}>
-                    <div style={{ fontSize: 12, color: C.tl }}>Goal: {"\u20B9"}{goal.toLocaleString("en-IN")}</div>
+                    <div style={{ fontSize: 12, color: C.tl }}>Goal: {"\u20B9"}{g.toLocaleString("en-IN")}</div>
                 </div>
             </div>
             <div style={{ height: 10, borderRadius: 5, background: C.bg2, overflow: "hidden", marginBottom: 14 }}>
@@ -97,24 +98,20 @@ export function CampaignProgress({ raised = 1016000, goal = 2400000, supporters 
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
                 <span style={{ color: C.green, fontWeight: 600 }}>{Math.round(pct)}% funded</span>
                 <div style={{ display: "flex", gap: 16 }}>
-                    <span style={{ color: C.tm, display: "flex", alignItems: "center", gap: 4 }}><User s={13} /> <strong>{supporters}</strong> sponsors</span>
-                    <span style={{ color: C.red, display: "flex", alignItems: "center", gap: 4, fontWeight: 500 }}><Clock s={13} /> {daysLeft} days left</span>
+                    <span style={{ color: C.tm, display: "flex", alignItems: "center", gap: 4 }}><User s={13} /> <strong>{s}</strong> sponsors</span>
+                    <span style={{ color: C.red, display: "flex", alignItems: "center", gap: 4, fontWeight: 500 }}><Clock s={13} /> {d} days left</span>
                 </div>
             </div>
         </div>
     );
 }
 
-export function RecentSupporters() {
-    const donors = [
-        { name: "Anjali Mehta", amount: 8000, time: "12 min ago", type: "individual", city: "Mumbai" },
-        { name: "Vikram + 3", amount: 2000, time: "28 min ago", type: "group", city: "Delhi" },
-        { name: "Deepika R.", amount: 96000, time: "1 hour ago", type: "individual", city: "Bangalore", annual: true },
-        { name: "Karthik S.", amount: 2000, time: "2 hours ago", type: "group", city: "Chennai" },
-        { name: "Anonymous", amount: 8000, time: "3 hours ago", type: "individual", city: "Pune" },
-        { name: "Riya + 3", amount: 2000, time: "4 hours ago", type: "group", city: "Hyderabad" },
-        { name: "Sameer J.", amount: 8000, time: "5 hours ago", type: "individual", city: "Kolkata" },
-    ];
+export function RecentSupporters({ limit }) {
+    const donors = getContentJSON("recent_supporters");
+    if (!Array.isArray(donors) || donors.length === 0) {
+        return <div style={{ textAlign: "center", padding: 32, color: C.tl, fontSize: 13 }}>No supporters yet</div>;
+    }
+    const shown = limit ? donors.slice(0, limit) : donors;
     return (
         <div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
@@ -124,18 +121,77 @@ export function RecentSupporters() {
                 <span style={{ fontSize: 12, color: C.tl }}>Live updates</span>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-                {donors.map((d, i) => (
-                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderBottom: i < donors.length - 1 ? `1px solid ${C.brdL}` : "none", animation: `fadeUp 0.4s ease ${i * 0.05}s both` }}>
-                        <div style={{ width: 36, height: 36, borderRadius: "50%", background: d.type === "individual" ? C.goldS : C.greenS, display: "flex", alignItems: "center", justifyContent: "center", color: d.type === "individual" ? C.gold : C.green, fontSize: 14, fontWeight: 600, flexShrink: 0 }}>{d.name[0]}</div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                <span style={{ fontWeight: 500, fontSize: 14, color: C.td }}>{d.name}</span>
-                                <span style={{ fontWeight: 600, fontSize: 14, color: C.green }}>{"\u20B9"}{d.amount.toLocaleString()}{d.annual ? "/yr" : "/mo"}</span>
+                {shown.map((d, i) => {
+                    const initial = (d.name && d.name.length > 0) ? d.name[0] : "?";
+                    const amount = typeof d.amount === "number" ? d.amount : Number(d.amount) || 0;
+                    return (
+                        <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderBottom: i < shown.length - 1 ? `1px solid ${C.brdL}` : "none", animation: `fadeUp 0.4s ease ${i * 0.05}s both` }}>
+                            <div style={{ width: 36, height: 36, borderRadius: "50%", background: d.type === "individual" ? C.goldS : C.greenS, display: "flex", alignItems: "center", justifyContent: "center", color: d.type === "individual" ? C.gold : C.green, fontSize: 14, fontWeight: 600, flexShrink: 0 }}>{initial}</div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                    <span style={{ fontWeight: 500, fontSize: 14, color: C.td }}>{d.name}</span>
+                                    <span style={{ fontWeight: 600, fontSize: 14, color: C.green }}>{"\u20B9"}{amount.toLocaleString()}{d.annual ? "/yr" : "/mo"}</span>
+                                </div>
+                                <div style={{ fontSize: 12, color: C.tl, display: "flex", gap: 8, marginTop: 2 }}>
+                                    <span>{d.city}</span><span>{"\u00B7"}</span><span>{d.time}</span>
+                                    {d.type === "group" && <span style={{ color: C.green, fontWeight: 500 }}>Group</span>}
+                                </div>
                             </div>
-                            <div style={{ fontSize: 12, color: C.tl, display: "flex", gap: 8, marginTop: 2 }}>
-                                <span>{d.city}</span><span>\u00B7</span><span>{d.time}</span>
-                                {d.type === "group" && <span style={{ color: C.green, fontWeight: 500 }}>Group</span>}
-                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
+
+export function GirlsProgress() {
+    const raised = Number(getContent("campaign_raised")) || 0;
+    const goal = Number(getContent("campaign_goal")) || 1;
+    const targetGirls = Number(getContent("campaign_target_girls")) || 15;
+    const filled = Math.min(targetGirls, Math.round((raised / goal) * targetGirls));
+    const girlSvg = (isColored, idx) => (
+        <svg key={idx} width="32" height="40" viewBox="0 0 32 40" style={{ transition: "all 0.5s ease", filter: isColored ? "none" : "grayscale(100%) opacity(0.35)" }}>
+            <circle cx="16" cy="12" r="8" fill={isColored ? C.gold : "#ccc"} />
+            <path d="M16 22c-7 0-12 3-12 6v4h24v-4c0-3-5-6-12-6z" fill={isColored ? C.green : "#ddd"} />
+            <circle cx="16" cy="10" r="9" fill="none" stroke={isColored ? "#2D5016" : "#bbb"} strokeWidth="0.5" />
+            <path d="M8 8c0-6 4-8 8-8s8 2 8 8" fill={isColored ? "#1a1a1a" : "#bbb"} opacity={isColored ? 0.9 : 0.4} />
+        </svg>
+    );
+    return (
+        <div style={{ background: C.white, borderRadius: 14, padding: "20px 24px", border: `1px solid ${C.brdL}`, marginTop: 16 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: C.td }}>
+                    Goal: <span style={{ color: C.gold }}>{targetGirls} girls</span> | {"\u20B9"}{goal.toLocaleString("en-IN")}
+                </div>
+                <div style={{ fontSize: 12, color: C.tl }}>{filled} of {targetGirls} funded</div>
+            </div>
+            <div style={{ display: "flex", justifyContent: "center", gap: 4, flexWrap: "wrap" }}>
+                {Array.from({ length: targetGirls }).map((_, i) => girlSvg(i < filled, i))}
+            </div>
+        </div>
+    );
+}
+
+export function TopDonors() {
+    const donors = getContentJSON("top_donors");
+    if (!Array.isArray(donors) || donors.length === 0) return null;
+    const medals = ["🥇", "🥈", "🥉", "4", "5"];
+    return (
+        <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                <span style={{ fontSize: 16 }}>🏆</span>
+                <h3 style={{ fontSize: 15, fontWeight: 600, color: C.td }}>Top Sponsors</h3>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                {donors.slice(0, 5).map((d, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: i < Math.min(donors.length, 5) - 1 ? `1px solid ${C.brdL}` : "none" }}>
+                        <div style={{ width: 28, height: 28, borderRadius: "50%", background: i < 3 ? C.goldS : C.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: i < 3 ? 14 : 11, fontWeight: 600, color: C.gold, flexShrink: 0 }}>
+                            {i < 3 ? medals[i] : <span style={{ color: C.tl }}>{i + 1}</span>}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: 14, fontWeight: 500, color: C.td }}>{d.name}</div>
+                            <div style={{ fontSize: 11, color: C.tl }}>{d.city}</div>
                         </div>
                     </div>
                 ))}
@@ -145,14 +201,17 @@ export function RecentSupporters() {
 }
 
 export function UrgencyBanner() {
-    const [t, setT] = useState({ d: 18, h: 14, m: 32, s: 0 });
+    const endLabel = getContent("campaign_end_label");
+    const endDate = getContent("campaign_end_date");
+    const daysLeft = Number(getContent("campaign_days_left"));
+    const [t, setT] = useState({ d: daysLeft, h: 14, m: 32, s: 0 });
     useEffect(() => { const i = setInterval(() => setT(p => { let s = p.s - 1; let m = p.m; let h = p.h; let d = p.d; if (s < 0) { s = 59; m--; } if (m < 0) { m = 59; h--; } if (h < 0) { h = 23; d--; } return { d, h, m, s }; }), 1000); return () => clearInterval(i); }, []);
     const box = { background: C.white, borderRadius: 6, padding: "6px 10px", minWidth: 40, textAlign: "center" };
     return (
         <div style={{ background: `linear-gradient(135deg, ${C.red}11, ${C.gold}11)`, border: `1px solid ${C.red}22`, borderRadius: 12, padding: "16px 24px", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
             <div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: C.red, marginBottom: 2 }}>Campaign ends on Women's Day</div>
-                <div style={{ fontSize: 12, color: C.tm }}>March 8th, 2025 — sponsor before it's too late</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: C.red, marginBottom: 2 }}>{endLabel}</div>
+                <div style={{ fontSize: 12, color: C.tm }}>{endDate} — sponsor before it's too late</div>
             </div>
             <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                 {[{ v: t.d, l: "days" }, { v: t.h, l: "hrs" }, { v: t.m, l: "min" }, { v: t.s, l: "sec" }].map((x, i) => (
@@ -167,11 +226,13 @@ export function UrgencyBanner() {
 }
 
 export function ImpactCalculator() {
-    const items = [
-        { amount: "8,000", period: "/month", impacts: ["1 girl's tuition fees", "A dedicated buddy mentor", "Learning tools & resources", "Life skills workshops"] },
-        { amount: "96,000", period: "/year", impacts: ["1 girl's full-year fellowship", "End-to-end career support", "Internship placements", "Access to professional network"] },
-    ];
+    const items = getContentJSON("impact_items");
     const [sel, setSel] = useState(0);
+    if (!Array.isArray(items) || items.length === 0) {
+        return <div style={{ background: C.white, borderRadius: 16, padding: "28px", border: `1px solid ${C.brd}`, textAlign: "center", color: C.tl }}>No impact data configured</div>;
+    }
+    const current = items[sel] || items[0];
+    const impacts = Array.isArray(current.impacts) ? current.impacts : [];
     return (
         <div style={{ background: C.white, borderRadius: 16, padding: "28px", border: `1px solid ${C.brd}` }}>
             <h3 style={{ fontSize: 15, fontWeight: 600, color: C.td, marginBottom: 16 }}>See the impact of your contribution</h3>
@@ -184,8 +245,8 @@ export function ImpactCalculator() {
                 ))}
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-                {items[sel].impacts.map((imp, i) => (
-                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: i < items[sel].impacts.length - 1 ? `1px solid ${C.brdL}` : "none" }}>
+                {impacts.map((imp, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: i < impacts.length - 1 ? `1px solid ${C.brdL}` : "none" }}>
                         <div style={{ width: 28, height: 28, borderRadius: "50%", background: C.greenS, display: "flex", alignItems: "center", justifyContent: "center", color: C.green, flexShrink: 0 }}><Check s={14} /></div>
                         <span style={{ fontSize: 14, color: C.tm }}>{imp}</span>
                     </div>

@@ -13,7 +13,8 @@
     "jspdf": "^4.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-router-dom": "^7.13.0"
+    "react-router-dom": "^7.13.0",
+    "resend": "^6.9.2"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.0",

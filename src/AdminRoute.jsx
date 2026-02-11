@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { C, Heart, Users, Check, BookOpen, Back, GlobalStyles, backBtn } from "./shared.jsx";
-import { getAllGroups, getAllContributions, getRevenueStats, cancelSubscription, exportContributionsCSV } from "./dataService.js";
+import { getAllGroups, getAllContributions, getRevenueStats, cancelSubscription, exportContributionsCSV, getWebhookEvents } from "./dataService.js";
 import { generateReceiptFromContribution } from "./invoiceService.js";
+import ContentEditor from "./ContentEditor.jsx";
 
 export default function AdminRoute() {
     const navigate = useNavigate();
@@ -16,6 +17,9 @@ export default function AdminRoute() {
     const [activeTab, setActiveTab] = useState("overview");
     const [subFilter, setSubFilter] = useState("all");
     const [cancelling, setCancelling] = useState(null);
+    const [webhookEvents, setWebhookEvents] = useState([]);
+    const [eventFilter, setEventFilter] = useState("");
+    const [expandedEvent, setExpandedEvent] = useState(null);
 
     useEffect(() => {
         if (authenticated) loadData();
@@ -23,16 +27,29 @@ export default function AdminRoute() {
 
     async function loadData() {
         try {
-            const [g, c, r] = await Promise.all([getAllGroups(), getAllContributions(), getRevenueStats()]);
+            const [g, c, r, w] = await Promise.all([getAllGroups(), getAllContributions(), getRevenueStats(), getWebhookEvents(100)]);
             setGroups(g);
             setContributions(c);
             setRevenue(r);
+            setWebhookEvents(w);
         } catch (err) {
             console.error("Error loading admin data:", err);
         } finally {
             setLoading(false);
         }
     }
+
+    // Auto-refresh webhook events every 30 seconds when Activity tab active
+    useEffect(() => {
+        if (!authenticated || activeTab !== "activity") return;
+        const interval = setInterval(async () => {
+            try {
+                const w = await getWebhookEvents(100);
+                setWebhookEvents(w);
+            } catch (e) { /* skip */ }
+        }, 30000);
+        return () => clearInterval(interval);
+    }, [authenticated, activeTab]);
 
     const totalGirls = groups.filter(g => g.filled_slots >= g.total_slots).length + contributions.filter(c => c.type === "individual" && c.payment_status === "Success").length;
 
@@ -148,6 +165,8 @@ export default function AdminRoute() {
                     {tabBtn("overview", "Overview")}
                     {tabBtn("subscriptions", "Subscriptions")}
                     {tabBtn("groups", "Groups")}
+                    {tabBtn("activity", "Activity Log")}
+                    {tabBtn("content", "Site Content")}
                 </div>
 
                 {loading ? (
@@ -344,6 +363,65 @@ export default function AdminRoute() {
                         </>}
 
                         {groups.length === 0 && contributions.length === 0 && activeTab === "overview" && <div style={{ textAlign: "center", padding: 60, color: C.tx }}>No data yet. Contributions and groups will appear here.</div>}
+
+                        {/* ===== ACTIVITY LOG TAB ===== */}
+                        {activeTab === "activity" && <>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                                <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, color: C.green, margin: 0 }}>Webhook Activity Log</h2>
+                                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                                    <input
+                                        placeholder="Filter events..."
+                                        value={eventFilter}
+                                        onChange={e => setEventFilter(e.target.value)}
+                                        style={{ padding: "6px 12px", background: C.bg, border: `1px solid ${C.brd}`, borderRadius: 6, color: C.td, fontSize: 12, fontFamily: "inherit", outline: "none", width: 180 }}
+                                    />
+                                    <button onClick={loadData} style={{ background: C.white, border: `1px solid ${C.brd}`, color: C.green, padding: "6px 12px", borderRadius: 6, fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>↻ Refresh</button>
+                                </div>
+                            </div>
+                            <p style={{ color: C.tl, fontSize: 12, marginBottom: 16 }}>Auto-refreshes every 30 seconds • Showing last 100 events</p>
+                            {webhookEvents.length > 0 ? (
+                                <div style={{ background: C.white, borderRadius: 14, border: `1px solid ${C.brd}`, overflow: "hidden" }}>
+                                    {webhookEvents
+                                        .filter(e => !eventFilter || e.event_type.toLowerCase().includes(eventFilter.toLowerCase()))
+                                        .map((ev, i) => {
+                                            const evtColor = ev.event_type.includes("failed") || ev.event_type.includes("dispute") ? "#DC2626"
+                                                : ev.event_type.includes("captured") || ev.event_type.includes("success") || ev.event_type.includes("charged") || ev.event_type.includes("processed") || ev.event_type.includes("paid") ? C.green
+                                                    : ev.event_type.includes("refund") ? "#3B82F6"
+                                                        : ev.event_type.includes("downtime") ? "#D97706"
+                                                            : ev.event_type.includes("cancel") || ev.event_type.includes("halt") ? "#D97706"
+                                                                : C.tl;
+                                            const statusBg = ev.status === "processed" ? C.greenS : ev.status === "failed" ? "#FEE2E2" : "#F3F4F6";
+                                            const statusColor = ev.status === "processed" ? C.green : ev.status === "failed" ? "#DC2626" : C.tl;
+                                            const isExpanded = expandedEvent === ev.id;
+                                            return (
+                                                <div key={ev.id} style={{ borderBottom: `1px solid ${C.brdL}`, cursor: "pointer" }} onClick={() => setExpandedEvent(isExpanded ? null : ev.id)}>
+                                                    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px" }}>
+                                                        <div style={{ width: 8, height: 8, borderRadius: "50%", background: evtColor, flexShrink: 0 }} />
+                                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                                            <div style={{ fontFamily: "monospace", fontSize: 13, fontWeight: 600, color: evtColor }}>{ev.event_type}</div>
+                                                            {ev.contribution_id && <span style={{ fontSize: 11, color: C.tl }}>Contribution #{ev.contribution_id}</span>}
+                                                        </div>
+                                                        <span style={{ padding: "3px 10px", borderRadius: 12, fontSize: 10, fontWeight: 500, background: statusBg, color: statusColor }}>{ev.status}</span>
+                                                        <span style={{ fontSize: 11, color: C.tl, flexShrink: 0 }}>{ev.created_at ? new Date(ev.created_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "—"}</span>
+                                                        <span style={{ color: C.tl, fontSize: 14 }}>{isExpanded ? "▾" : "▸"}</span>
+                                                    </div>
+                                                    {isExpanded && (
+                                                        <div style={{ padding: "0 16px 14px 36px" }}>
+                                                            {ev.error_message && <div style={{ color: "#DC2626", fontSize: 12, marginBottom: 8, padding: "6px 10px", background: "#FEF2F2", borderRadius: 6 }}>Error: {ev.error_message}</div>}
+                                                            <pre style={{ background: C.bg, border: `1px solid ${C.brdL}`, borderRadius: 8, padding: 12, fontSize: 11, color: C.tm, overflow: "auto", maxHeight: 200, margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-all" }}>{JSON.stringify(ev.payload, null, 2)}</pre>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                </div>
+                            ) : (
+                                <div style={{ textAlign: "center", padding: 60, color: C.tl, background: C.white, borderRadius: 14, border: `1px solid ${C.brd}` }}>No webhook events recorded yet. Events will appear here once Razorpay sends webhooks.</div>
+                            )}
+                        </>}
+
+                        {/* ===== CONTENT MANAGEMENT TAB ===== */}
+                        {activeTab === "content" && <ContentEditor />}
                     </>
                 )}
             </div>
