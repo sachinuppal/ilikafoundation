@@ -3,6 +3,7 @@
 // Uses jspdf for client-side PDF generation
 
 import { jsPDF } from "jspdf";
+import { ILIKA_LOGO, SIGNATORY_STAMP } from "./invoiceAssets.js";
 
 /**
  * Convert a number to Indian words (e.g. 96000 → "Rupees Ninety Six Thousand Only")
@@ -86,15 +87,14 @@ export function generateDonationReceipt({
     let y = 22;
 
     // ─── HEADER — Logo + Organization Name ───
-    // Circle logo placeholder
-    doc.setFillColor(182, 210, 230);
-    doc.setDrawColor(60, 100, 140);
-    doc.setLineWidth(0.3);
-    doc.circle(margin + 12, y + 10, 10, "FD");
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(9);
-    doc.setTextColor(60, 100, 140);
-    doc.text("ilika", margin + 12, y + 12, { align: "center" });
+    // Actual Ilika logo image
+    try {
+        doc.addImage(ILIKA_LOGO, "PNG", margin, y - 2, 24, 24);
+    } catch (e) {
+        // Fallback circle if image fails
+        doc.setFillColor(182, 210, 230);
+        doc.circle(margin + 12, y + 10, 10, "F");
+    }
 
     // Organization name
     doc.setFont("helvetica", "bold");
@@ -206,20 +206,20 @@ export function generateDonationReceipt({
     doc.text("For Twelve Ten Empowering Possibilities Foundation", pageW - margin, y, { align: "right" });
     y += 12;
 
-    // Stamp circle placeholder
-    const stampX = pageW - margin - 25;
-    const stampY = y + 5;
-    doc.setFillColor(182, 210, 230);
-    doc.setDrawColor(60, 100, 140);
-    doc.setLineWidth(0.4);
-    doc.circle(stampX, stampY, 12, "FD");
-    doc.setFontSize(6);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(40, 70, 110);
-    doc.text("MUMBAI", stampX, stampY - 2, { align: "center" });
-    doc.text("400 054", stampX, stampY + 2, { align: "center" });
+    // Actual signatory stamp + signature image
+    const stampImgW = 80;
+    const stampImgH = 30;
+    const stampImgX = pageW - margin - stampImgW;
+    try {
+        doc.addImage(SIGNATORY_STAMP, "PNG", stampImgX, y - 2, stampImgW, stampImgH);
+    } catch (e) {
+        // Fallback text if image fails
+        doc.setFont("helvetica", "italic");
+        doc.setFontSize(8);
+        doc.text("[Stamp & Signature]", pageW - margin, y + 10, { align: "right" });
+    }
 
-    y += 20;
+    y += stampImgH + 4;
     doc.setFont("helvetica", "italic");
     doc.setFontSize(9);
     doc.setTextColor(60, 60, 60);
