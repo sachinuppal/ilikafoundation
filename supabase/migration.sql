@@ -65,6 +65,10 @@ ALTER TABLE contributions ADD COLUMN IF NOT EXISTS retry_count INT DEFAULT 0;
 ALTER TABLE contributions ADD COLUMN IF NOT EXISTS last_retry_at TIMESTAMPTZ;
 ALTER TABLE contributions ADD COLUMN IF NOT EXISTS last_reminder_sent_at TIMESTAMPTZ;
 
+-- Referral tracking
+ALTER TABLE contributions ADD COLUMN IF NOT EXISTS referral_code TEXT UNIQUE;
+ALTER TABLE contributions ADD COLUMN IF NOT EXISTS referred_by TEXT;
+
 -- ===== UPDATE CHECK CONSTRAINTS (drop old, add new) =====
 
 -- payment_status: expand to include Authorized, Refunded, Disputed
@@ -124,6 +128,8 @@ CREATE INDEX IF NOT EXISTS idx_contributions_razorpay_payment_id ON contribution
 CREATE INDEX IF NOT EXISTS idx_contributions_razorpay_subscription_id ON contributions(razorpay_subscription_id);
 CREATE INDEX IF NOT EXISTS idx_contributions_dispute_status ON contributions(dispute_status);
 CREATE INDEX IF NOT EXISTS idx_contributions_retry ON contributions(payment_status, retry_count);
+CREATE INDEX IF NOT EXISTS idx_contributions_referral_code ON contributions(referral_code);
+CREATE INDEX IF NOT EXISTS idx_contributions_referred_by ON contributions(referred_by);
 CREATE INDEX IF NOT EXISTS idx_webhook_events_type ON webhook_events(event_type);
 CREATE INDEX IF NOT EXISTS idx_webhook_events_created ON webhook_events(created_at);
 CREATE INDEX IF NOT EXISTS idx_email_logs_recipient ON email_logs(recipient);

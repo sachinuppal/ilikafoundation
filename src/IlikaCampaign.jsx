@@ -30,10 +30,18 @@ export default function IlikaCampaign() {
   const [lastPayment, setLastPayment] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showRetention, setShowRetention] = useState(false);
+  const [referredBy, setReferredBy] = useState(null);
   const sponsorRef = useRef(null);
   const { toast, showToast, showCustomToast, dismissToast } = useToast();
 
-  useEffect(() => { setM(true); loadContentFromDB().then(() => loadStats()); }, []);
+  useEffect(() => {
+    setM(true);
+    // Capture referral code from URL
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get("ref");
+    if (ref) setReferredBy(ref.trim());
+    loadContentFromDB().then(() => loadStats());
+  }, []);
 
   const scrollToSponsor = () => { sponsorRef.current?.scrollIntoView({ behavior: "smooth" }); };
 
@@ -53,7 +61,7 @@ export default function IlikaCampaign() {
     if (!indF.name || !indF.email || !indF.phone) return;
     setSubmitting(true);
     try {
-      const contrib = await createIndividualContribution(indF);
+      const contrib = await createIndividualContribution({ ...indF, referredBy });
       setSubmitting(false);
       setPaymentProcessing(true);
       // Open Razorpay checkout
@@ -69,7 +77,7 @@ export default function IlikaCampaign() {
           try {
             await updatePaymentStatus(contrib.id, response.razorpay_payment_id, "Success");
           } catch (e) { console.error("Failed to update payment status:", e); }
-          setLastPayment({ id: contrib.id, paymentId: response.razorpay_payment_id });
+          setLastPayment({ id: contrib.id, paymentId: response.razorpay_payment_id, referralCode: contrib.referral_code });
           setPaymentProcessing(false);
           setDone(true);
           showToast("payment_success");
@@ -397,7 +405,7 @@ export default function IlikaCampaign() {
                     <p style={{ fontSize: 15, color: C.green, marginBottom: 4, fontWeight: 600, fontFamily: "'Playfair Display', serif" }}>Multiply your impact</p>
                     <p style={{ fontSize: 13, color: C.tm, marginBottom: 16, lineHeight: 1.5 }}>Share this with your friends and family — invite them to sponsor a girl or start their own group campaign.</p>
                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                      <a href={`https://wa.me/?text=${encodeURIComponent(`I just sponsored a girl's education through Ilika Foundation! 🎓 This Women's Day, you can change a girl's future too — just ₹8,000/mo or ₹2,000/mo with friends.\n\nJoin here: ${window.location.origin}`)}`} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "#25D366", color: C.white, border: "none", padding: "12px 24px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", textDecoration: "none" }}>💬 Share on WhatsApp</a>
+                      <a href={`https://wa.me/?text=${encodeURIComponent(`I just sponsored a girl's education through Ilika Foundation! 🎓 This Women's Day, you can change a girl's future too — just ₹8,000/mo or ₹2,000/mo with friends.\n\nJoin here: ${window.location.origin}${lastPayment?.referralCode ? `?ref=${lastPayment.referralCode}` : ""}`)}`} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "#25D366", color: C.white, border: "none", padding: "12px 24px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", textDecoration: "none" }}>💬 Share on WhatsApp</a>
                       <button onClick={() => { setDone(false); setOpt(2); }} style={{ background: C.white, border: `2px solid ${C.green}`, color: C.green, padding: "12px 24px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}><Users s={16} /> Start a Group Campaign</button>
                     </div>
                   </div>

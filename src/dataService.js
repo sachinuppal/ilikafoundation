@@ -107,7 +107,16 @@ export async function joinGroup(group_id, { name, email, phone }) {
 }
 
 // ===== INDIVIDUAL CONTRIBUTIONS =====
-export async function createIndividualContribution({ name, email, phone, company, payment }) {
+
+/** Generate a short referral code from the donor name, e.g. "sachin-uppal-x3k7" */
+function generateReferralCode(name) {
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 20);
+    const rand = Math.random().toString(36).slice(2, 6);
+    return `${slug}-${rand}`;
+}
+
+export async function createIndividualContribution({ name, email, phone, company, payment, referredBy }) {
+    const referralCode = generateReferralCode(name);
     const contribData = {
         donor_name: name,
         email,
@@ -117,6 +126,8 @@ export async function createIndividualContribution({ name, email, phone, company
         payment_preference: payment,
         payment_status: "Pending",
         amount: payment === "annual" ? 96000 : 8000,
+        referral_code: referralCode,
+        referred_by: referredBy || null,
     };
 
     if (isSupabaseConfigured) {
@@ -134,6 +145,32 @@ export async function createIndividualContribution({ name, email, phone, company
         memContribs.push(entry);
         return entry;
     }
+}
+
+// ===== REFERRAL STATS =====
+export async function getReferralStats() {
+    if (!isSupabaseConfigured) return [];
+    const { data, error } = await supabase
+        .from("contributions")
+        .select("referral_code, donor_name, email, referred_by")
+        .eq("payment_status", "Success")
+        .not("referral_code", "is", null);
+    if (error) throw error;
+
+    // Build a map: referral_code → { name, email, conversions }
+    const refMap = {};
+    for (const d of data) {
+        if (d.referral_code && !refMap[d.referral_code]) {
+            refMap[d.referral_code] = { name: d.donor_name, email: d.email, code: d.referral_code, conversions: 0 };
+        }
+    }
+    // Count conversions: how many donors used each referral code
+    for (const d of data) {
+        if (d.referred_by && refMap[d.referred_by]) {
+            refMap[d.referred_by].conversions++;
+        }
+    }
+    return Object.values(refMap).sort((a, b) => b.conversions - a.conversions);
 }
 
 // ===== ADMIN DATA =====
