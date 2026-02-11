@@ -15,7 +15,7 @@ import { getContent, getContentJSON, loadContentFromDB } from "./siteContent.js"
 export default function IlikaCampaign() {
   const navigate = useNavigate();
   const [opt, setOpt] = useState(null);
-  const [indF, setIndF] = useState({ name: "", email: "", phone: "", company: "", payment: "monthly" });
+  const [indF, setIndF] = useState({ name: "", email: "", phone: "", company: "", payment: "monthly", panNumber: "", donorType: "individual", gstNumber: "" });
   const [grpF, setGrpF] = useState({ name: "", email: "", phone: "" });
   const [done, setDone] = useState(false);
   const [m, setM] = useState(false);
@@ -428,6 +428,27 @@ export default function IlikaCampaign() {
                   <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, marginBottom: 4, color: C.green }}>You're about to change a life</h3>
                   <p style={{ color: C.tl, fontSize: 13, marginBottom: 24 }}>Just a few details. Takes less than 60 seconds.</p>
                   {[{ k: "name", l: "Full Name", p: "Your full name", t: "text" }, { k: "email", l: "Email", p: "you@email.com", t: "email" }, { k: "phone", l: "Phone", p: "+91 XXXXX XXXXX", t: "tel" }, { k: "company", l: "Company (Optional)", p: "Company name", t: "text" }].map(f => <div key={f.k} style={{ marginBottom: 16 }}><label style={lbl}>{f.l}</label><input type={f.t} value={indF[f.k]} onChange={e => setIndF({ ...indF, [f.k]: e.target.value })} placeholder={f.p} style={inp} /></div>)}
+                  {/* Donor Type Toggle */}
+                  <div style={{ marginBottom: 16 }}>
+                    <label style={lbl}>Donation Type</label>
+                    <div style={{ display: "flex", gap: 10 }}>
+                      {[{ v: "individual", l: "Individual" }, { v: "corporate", l: "Corporate" }].map(o => (
+                        <button key={o.v} onClick={() => setIndF({ ...indF, donorType: o.v })} style={{ flex: 1, padding: "10px 12px", borderRadius: 8, cursor: "pointer", fontFamily: "inherit", textAlign: "center", background: indF.donorType === o.v ? C.greenS : C.bg, border: indF.donorType === o.v ? `2px solid ${C.green}` : `1px solid ${C.brd}`, color: indF.donorType === o.v ? C.green : C.tm, fontSize: 14, fontWeight: 600 }}>{o.l}</button>
+                      ))}
+                    </div>
+                  </div>
+                  {/* PAN Number (Optional) */}
+                  <div style={{ marginBottom: 16 }}>
+                    <label style={lbl}>PAN Number (Optional — for 80G tax receipt)</label>
+                    <input type="text" value={indF.panNumber} onChange={e => setIndF({ ...indF, panNumber: e.target.value.toUpperCase() })} placeholder="e.g. ABCDE1234F" maxLength={10} style={inp} />
+                  </div>
+                  {/* GST Number (Corporate only) */}
+                  {indF.donorType === "corporate" && (
+                    <div style={{ marginBottom: 16 }}>
+                      <label style={lbl}>GST Number</label>
+                      <input type="text" value={indF.gstNumber} onChange={e => setIndF({ ...indF, gstNumber: e.target.value.toUpperCase() })} placeholder="e.g. 27AABCU9603R1ZM" maxLength={15} style={inp} />
+                    </div>
+                  )}
                   <div style={{ marginBottom: 24 }}><label style={{ ...lbl, marginBottom: 10 }}>Payment</label><div style={{ display: "flex", gap: 10 }}>{[{ v: "monthly", l: "\u20B98,000/month", s: "Monthly" }, { v: "annual", l: "\u20B996,000/year", s: "Save \u20B9600 \u00B7 Annual" }].map(o => <button key={o.v} onClick={() => setIndF({ ...indF, payment: o.v })} style={{ flex: 1, padding: "14px 12px", borderRadius: 8, cursor: "pointer", fontFamily: "inherit", textAlign: "center", background: indF.payment === o.v ? C.goldS : C.bg, border: indF.payment === o.v ? `2px solid ${C.gold}` : `1px solid ${C.brd}`, color: indF.payment === o.v ? C.gold : C.tm }}><div style={{ fontSize: 15, fontWeight: 600 }}>{o.l}</div><div style={{ fontSize: 11, marginTop: 2, opacity: 0.7 }}>{o.s}</div></button>)}</div></div>
                   <button onClick={submitInd} disabled={submitting} style={{ width: "100%", background: `linear-gradient(135deg,${C.gold},${C.goldL})`, color: C.white, border: "none", padding: "15px", borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: submitting ? "wait" : "pointer", fontFamily: "inherit", boxShadow: `0 4px 20px ${C.gold}33`, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: submitting ? 0.7 : 1 }}>{submitting ? "Processing..." : <>Sponsor Now — {indF.payment === "monthly" ? "₹8,000/mo" : "₹96,000/yr"} <Arrow /></>}</button>
                   <p style={{ textAlign: "center", fontSize: 11, color: C.tl, marginTop: 10 }}>Secure Razorpay {"\u00B7"} 80G tax receipt {"\u00B7"} Cancel anytime</p>
@@ -442,7 +463,7 @@ export default function IlikaCampaign() {
                   <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, marginBottom: 8, color: C.green }}>Thank You, {indF.name.split(" ")[0]}!</h3>
                   <p style={{ color: C.tm, fontSize: 14, lineHeight: 1.6, marginBottom: 12 }}>Your payment of {indF.payment === "monthly" ? "\u20B98,000" : "\u20B996,000"} has been received. You are now sponsoring a girl's education!</p>
                   <p style={{ color: C.tl, fontSize: 13, marginBottom: 16 }}>Tax receipt and fellowship updates will be sent to {indF.email}</p>
-                  <button onClick={() => generateDonationReceipt({ donorName: indF.name, email: indF.email, phone: indF.phone, amount: indF.payment === "annual" ? 96000 : 8000, paymentId: lastPayment?.paymentId || "N/A", type: "individual", paymentPreference: indF.payment, date: new Date().toISOString(), contributionId: lastPayment?.id })} style={{ background: C.white, border: `1px solid ${C.green}44`, color: C.green, padding: "12px 28px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>📄 Download 80G Receipt (PDF)</button>
+                  <button onClick={() => generateDonationReceipt({ donorName: indF.name, email: indF.email, phone: indF.phone, amount: indF.payment === "annual" ? 96000 : 8000, paymentId: lastPayment?.paymentId || "N/A", type: "individual", paymentPreference: indF.payment, date: new Date().toISOString(), contributionId: lastPayment?.id, panNumber: indF.panNumber, donorType: indF.donorType, gstNumber: indF.gstNumber, company: indF.company })} style={{ background: C.white, border: `1px solid ${C.green}44`, color: C.green, padding: "12px 28px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>📄 Download 80G Receipt (PDF)</button>
                   {/* Share + Referral CTA */}
                   <div style={{ background: C.white, borderRadius: 12, padding: "20px", border: `1px solid ${C.brdL}`, marginTop: 12 }}>
                     <p style={{ fontSize: 15, color: C.green, marginBottom: 4, fontWeight: 600, fontFamily: "'Playfair Display', serif" }}>Multiply your impact</p>

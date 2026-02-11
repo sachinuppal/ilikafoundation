@@ -69,6 +69,11 @@ ALTER TABLE contributions ADD COLUMN IF NOT EXISTS last_reminder_sent_at TIMESTA
 ALTER TABLE contributions ADD COLUMN IF NOT EXISTS referral_code TEXT UNIQUE;
 ALTER TABLE contributions ADD COLUMN IF NOT EXISTS referred_by TEXT;
 
+-- PAN / Corporate / GST
+ALTER TABLE contributions ADD COLUMN IF NOT EXISTS pan_number TEXT;
+ALTER TABLE contributions ADD COLUMN IF NOT EXISTS donor_type TEXT DEFAULT 'individual' CHECK (donor_type IN ('individual', 'corporate'));
+ALTER TABLE contributions ADD COLUMN IF NOT EXISTS gst_number TEXT;
+
 -- ===== UPDATE CHECK CONSTRAINTS (drop old, add new) =====
 
 -- payment_status: expand to include Authorized, Refunded, Disputed

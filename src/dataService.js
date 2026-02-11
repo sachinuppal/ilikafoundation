@@ -115,7 +115,7 @@ function generateReferralCode(name) {
     return `${slug}-${rand}`;
 }
 
-export async function createIndividualContribution({ name, email, phone, company, payment, referredBy }) {
+export async function createIndividualContribution({ name, email, phone, company, payment, referredBy, panNumber, donorType, gstNumber }) {
     const referralCode = generateReferralCode(name);
     const contribData = {
         donor_name: name,
@@ -128,6 +128,9 @@ export async function createIndividualContribution({ name, email, phone, company
         amount: payment === "annual" ? 96000 : 8000,
         referral_code: referralCode,
         referred_by: referredBy || null,
+        pan_number: panNumber || null,
+        donor_type: donorType || "individual",
+        gst_number: gstNumber || null,
     };
 
     if (isSupabaseConfigured) {
