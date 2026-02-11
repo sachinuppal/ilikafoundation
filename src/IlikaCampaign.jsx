@@ -6,7 +6,7 @@ import {
   CampaignProgress, RecentSupporters, UrgencyBanner, GirlsProgress, TopDonors,
   inp, lbl, Share
 } from "./shared.jsx";
-import { createIndividualContribution, createGroup, getCampaignStats, updatePaymentStatus } from "./dataService.js";
+import { createIndividualContribution, createGroup, getCampaignStats, updatePaymentStatus, getReferralStats } from "./dataService.js";
 import { openRazorpayCheckout, isRazorpayConfigured } from "./razorpayService.js";
 import { generateDonationReceipt } from "./invoiceService.js";
 import { StatusToast, ToastStyles, useToast } from "./statusToast.jsx";
@@ -31,6 +31,7 @@ export default function IlikaCampaign() {
   const [showModal, setShowModal] = useState(false);
   const [showRetention, setShowRetention] = useState(false);
   const [referredBy, setReferredBy] = useState(null);
+  const [referralLeaders, setReferralLeaders] = useState([]);
   const sponsorRef = useRef(null);
   const { toast, showToast, showCustomToast, dismissToast } = useToast();
 
@@ -55,6 +56,11 @@ export default function IlikaCampaign() {
         groupCount: Number(getContent("stats_group_count_offset")) + s.groupCount,
       });
     } catch (e) { /* keep defaults */ }
+    // Load referral leaderboard
+    try {
+      const leaders = await getReferralStats();
+      setReferralLeaders(leaders.filter(l => l.conversions > 0).slice(0, 10));
+    } catch (e) { /* silent */ }
   }
 
   const submitInd = async () => {
@@ -313,6 +319,43 @@ export default function IlikaCampaign() {
             </div>
           </div>
         </section>
+
+        {/* ============ REFERRAL LEADERBOARD ============ */}
+        {referralLeaders.length > 0 && (
+          <section style={{ ...secStyle, padding: "48px 28px", ...an(0.26) }}>
+            <div style={{ background: C.white, borderRadius: 16, padding: "28px 24px", border: `1px solid ${C.brdL}` }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+                <div style={{ width: 36, height: 36, borderRadius: "50%", background: `linear-gradient(135deg, ${C.gold}, #F59E0B)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🏆</div>
+                <div>
+                  <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, margin: 0, color: C.green }}>Impact Champions</h3>
+                  <p style={{ fontSize: 12, color: C.tl, margin: 0 }}>Donors who brought others to the cause</p>
+                </div>
+              </div>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ borderBottom: `2px solid ${C.brdL}` }}>
+                      <th style={{ textAlign: "left", padding: "10px 12px", color: C.tl, fontWeight: 600, fontSize: 11, textTransform: "uppercase", letterSpacing: 1 }}>#</th>
+                      <th style={{ textAlign: "left", padding: "10px 12px", color: C.tl, fontWeight: 600, fontSize: 11, textTransform: "uppercase", letterSpacing: 1 }}>Donor Name</th>
+                      <th style={{ textAlign: "center", padding: "10px 12px", color: C.tl, fontWeight: 600, fontSize: 11, textTransform: "uppercase", letterSpacing: 1 }}>Donors Invited</th>
+                      <th style={{ textAlign: "right", padding: "10px 12px", color: C.tl, fontWeight: 600, fontSize: 11, textTransform: "uppercase", letterSpacing: 1 }}>Funding Raised</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {referralLeaders.map((r, i) => (
+                      <tr key={r.code} style={{ borderBottom: `1px solid ${C.brdL}`, background: i === 0 ? `${C.gold}08` : "transparent" }}>
+                        <td style={{ padding: "12px", fontWeight: 700, color: i < 3 ? C.gold : C.tl }}>{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}</td>
+                        <td style={{ padding: "12px", fontWeight: 600, color: C.td }}>{r.name}</td>
+                        <td style={{ padding: "12px", textAlign: "center", fontWeight: 600, color: C.green }}>{r.conversions}</td>
+                        <td style={{ padding: "12px", textAlign: "right", fontWeight: 600, color: C.td }}>{"\u20B9"}{r.fundingRaised.toLocaleString("en-IN")}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* ============ TRUST SIGNALS — 80G + Section 8 only ============ */}
         <section style={{ ...secStyle, padding: "24px 28px", ...an(0.28) }}>

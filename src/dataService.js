@@ -152,25 +152,26 @@ export async function getReferralStats() {
     if (!isSupabaseConfigured) return [];
     const { data, error } = await supabase
         .from("contributions")
-        .select("referral_code, donor_name, email, referred_by")
+        .select("referral_code, donor_name, email, referred_by, amount")
         .eq("payment_status", "Success")
         .not("referral_code", "is", null);
     if (error) throw error;
 
-    // Build a map: referral_code → { name, email, conversions }
+    // Build a map: referral_code → { name, email, conversions, fundingRaised }
     const refMap = {};
     for (const d of data) {
         if (d.referral_code && !refMap[d.referral_code]) {
-            refMap[d.referral_code] = { name: d.donor_name, email: d.email, code: d.referral_code, conversions: 0 };
+            refMap[d.referral_code] = { name: d.donor_name, email: d.email, code: d.referral_code, conversions: 0, fundingRaised: 0 };
         }
     }
-    // Count conversions: how many donors used each referral code
+    // Count conversions and sum funding raised by referred donors
     for (const d of data) {
         if (d.referred_by && refMap[d.referred_by]) {
             refMap[d.referred_by].conversions++;
+            refMap[d.referred_by].fundingRaised += d.amount || 0;
         }
     }
-    return Object.values(refMap).sort((a, b) => b.conversions - a.conversions);
+    return Object.values(refMap).sort((a, b) => b.conversions - a.conversions || b.fundingRaised - a.fundingRaised);
 }
 
 // ===== ADMIN DATA =====

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { C, Heart, Users, Check, BookOpen, Back, GlobalStyles, backBtn } from "./shared.jsx";
-import { getAllGroups, getAllContributions, getRevenueStats, cancelSubscription, exportContributionsCSV, getWebhookEvents } from "./dataService.js";
+import { getAllGroups, getAllContributions, getRevenueStats, cancelSubscription, exportContributionsCSV, getWebhookEvents, getReferralStats } from "./dataService.js";
 import { generateReceiptFromContribution } from "./invoiceService.js";
 import ContentEditor from "./ContentEditor.jsx";
 
@@ -20,6 +20,7 @@ export default function AdminRoute() {
     const [webhookEvents, setWebhookEvents] = useState([]);
     const [eventFilter, setEventFilter] = useState("");
     const [expandedEvent, setExpandedEvent] = useState(null);
+    const [referralLeaders, setReferralLeaders] = useState([]);
 
     useEffect(() => {
         if (authenticated) loadData();
@@ -27,11 +28,12 @@ export default function AdminRoute() {
 
     async function loadData() {
         try {
-            const [g, c, r, w] = await Promise.all([getAllGroups(), getAllContributions(), getRevenueStats(), getWebhookEvents(100)]);
+            const [g, c, r, w, ref] = await Promise.all([getAllGroups(), getAllContributions(), getRevenueStats(), getWebhookEvents(100), getReferralStats()]);
             setGroups(g);
             setContributions(c);
             setRevenue(r);
             setWebhookEvents(w);
+            setReferralLeaders(ref);
         } catch (err) {
             console.error("Error loading admin data:", err);
         } finally {
@@ -166,6 +168,7 @@ export default function AdminRoute() {
                     {tabBtn("subscriptions", "Subscriptions")}
                     {tabBtn("groups", "Groups")}
                     {tabBtn("activity", "Activity Log")}
+                    {tabBtn("referrals", "Referrals")}
                     {tabBtn("content", "Site Content")}
                 </div>
 
@@ -422,6 +425,57 @@ export default function AdminRoute() {
 
                         {/* ===== CONTENT MANAGEMENT TAB ===== */}
                         {activeTab === "content" && <ContentEditor />}
+
+                        {/* ===== REFERRALS TAB ===== */}
+                        {activeTab === "referrals" && <>
+                            <h2 style={{ fontSize: 20, fontFamily: "'Playfair Display', serif", marginBottom: 8, color: C.green }}>🏆 Referral Leaderboard</h2>
+                            <p style={{ color: C.tl, fontSize: 13, marginBottom: 20 }}>Track which donors are inviting the most new sponsors and how much funding their referrals generate.</p>
+
+                            {/* Summary Cards */}
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16, marginBottom: 24 }}>
+                                <div style={{ background: C.bg, borderRadius: 12, padding: "20px", border: `1px solid ${C.brd}`, textAlign: "center" }}>
+                                    <div style={{ fontSize: 28, fontWeight: 700, color: C.green }}>{referralLeaders.filter(r => r.conversions > 0).length}</div>
+                                    <div style={{ fontSize: 12, color: C.tl, fontWeight: 500, marginTop: 4 }}>Active Referrers</div>
+                                </div>
+                                <div style={{ background: C.bg, borderRadius: 12, padding: "20px", border: `1px solid ${C.brd}`, textAlign: "center" }}>
+                                    <div style={{ fontSize: 28, fontWeight: 700, color: C.green }}>{referralLeaders.reduce((s, r) => s + r.conversions, 0)}</div>
+                                    <div style={{ fontSize: 12, color: C.tl, fontWeight: 500, marginTop: 4 }}>Total Referrals</div>
+                                </div>
+                                <div style={{ background: C.bg, borderRadius: 12, padding: "20px", border: `1px solid ${C.brd}`, textAlign: "center" }}>
+                                    <div style={{ fontSize: 28, fontWeight: 700, color: C.green }}>{"\u20B9"}{referralLeaders.reduce((s, r) => s + r.fundingRaised, 0).toLocaleString("en-IN")}</div>
+                                    <div style={{ fontSize: 12, color: C.tl, fontWeight: 500, marginTop: 4 }}>Funding via Referrals</div>
+                                </div>
+                            </div>
+
+                            {/* Leaderboard Table */}
+                            <div style={{ background: C.bg, borderRadius: 12, overflow: "hidden", border: `1px solid ${C.brd}` }}>
+                                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                                    <thead>
+                                        <tr style={{ borderBottom: `2px solid ${C.brd}` }}>
+                                            <th style={th}>#</th>
+                                            <th style={th}>Donor Name</th>
+                                            <th style={th}>Email</th>
+                                            <th style={th}>Referral Code</th>
+                                            <th style={{ ...th, textAlign: "center" }}>Donors Invited</th>
+                                            <th style={{ ...th, textAlign: "right" }}>Funding Raised</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {referralLeaders.length === 0 && <tr><td colSpan={6} style={{ ...td, textAlign: "center", color: C.tl, padding: 40 }}>No referral data yet. Donors will appear here once they share and get conversions.</td></tr>}
+                                        {referralLeaders.map((r, i) => (
+                                            <tr key={r.code} style={{ borderBottom: `1px solid ${C.brd}`, background: r.conversions > 0 ? (i === 0 ? `${C.gold}10` : "transparent") : "transparent" }}>
+                                                <td style={{ ...td, fontWeight: 700, color: i < 3 && r.conversions > 0 ? C.gold : C.tl }}>{i === 0 && r.conversions > 0 ? "🥇" : i === 1 && r.conversions > 0 ? "🥈" : i === 2 && r.conversions > 0 ? "🥉" : i + 1}</td>
+                                                <td style={{ ...td, fontWeight: 600, color: C.td }}>{r.name}</td>
+                                                <td style={{ ...td, color: C.tl, fontSize: 12 }}>{r.email}</td>
+                                                <td style={{ ...td }}><code style={{ background: `${C.green}10`, color: C.green, padding: "3px 8px", borderRadius: 4, fontSize: 11 }}>{r.code}</code></td>
+                                                <td style={{ ...td, textAlign: "center", fontWeight: 600, color: r.conversions > 0 ? C.green : C.tl }}>{r.conversions}</td>
+                                                <td style={{ ...td, textAlign: "right", fontWeight: 600, color: C.td }}>{"\u20B9"}{r.fundingRaised.toLocaleString("en-IN")}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </>}
                     </>
                 )}
             </div>
