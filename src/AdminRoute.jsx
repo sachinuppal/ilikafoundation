@@ -171,9 +171,28 @@ export default function AdminRoute() {
         <div style={{ minHeight: "100vh", background: C.bg, color: C.td, fontFamily: "'DM Sans', sans-serif" }}>
             <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
             <GlobalStyles />
-            <div style={{ maxWidth: 1100, margin: "0 auto", padding: "40px 24px" }}>
+            <style>{`
+                @media (max-width: 600px) {
+                    .admin-header { flex-direction: column; align-items: flex-start !important; gap: 12px; }
+                    .admin-title { font-size: 24px !important; }
+                    .admin-tabs { flex-wrap: nowrap !important; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 4px; }
+                    .admin-tabs::-webkit-scrollbar { display: none; }
+                    .admin-tabs button { white-space: nowrap; flex-shrink: 0; }
+                    .admin-grid-2col { grid-template-columns: 1fr !important; }
+                    .admin-table-wrap table { min-width: 600px; }
+                    .admin-table-wrap th, .admin-table-wrap td { padding: 10px 10px !important; font-size: 12px !important; }
+                    .admin-activity-header { flex-direction: column; align-items: flex-start !important; gap: 10px; }
+                    .admin-sub-filters { flex-wrap: nowrap !important; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 4px; }
+                    .admin-sub-filters::-webkit-scrollbar { display: none; }
+                    .admin-sub-filters button { white-space: nowrap; flex-shrink: 0; }
+                    .admin-sub-header { flex-direction: column; align-items: flex-start !important; gap: 10px; }
+                    .admin-main-pad { padding: 24px 14px !important; }
+                    .admin-referral-table th, .admin-referral-table td { padding: 10px 8px !important; font-size: 12px !important; }
+                }
+            `}</style>
+            <div className="admin-main-pad" style={{ maxWidth: 1100, margin: "0 auto", padding: "40px 24px" }}>
                 {/* Header */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
+                <div className="admin-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
                     <button onClick={() => navigate("/")} style={backBtn}><Back /> Back to Campaign</button>
                     <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                         <button onClick={handleExport} style={{ background: C.white, border: `1px solid ${C.brd}`, color: C.green, padding: "6px 14px", borderRadius: 6, fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 500 }}>↓ Export CSV</button>
@@ -181,11 +200,11 @@ export default function AdminRoute() {
                     </div>
                 </div>
 
-                <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 32, marginBottom: 8, color: C.green }}>Admin Dashboard</h1>
+                <h1 className="admin-title" style={{ fontFamily: "'Playfair Display', serif", fontSize: 32, marginBottom: 8, color: C.green }}>Admin Dashboard</h1>
                 <p style={{ color: C.tl, marginBottom: 24 }}>Campaign overview, payments & subscription management</p>
 
                 {/* Tab Navigation */}
-                <div style={{ display: "flex", gap: 8, marginBottom: 32, flexWrap: "wrap" }}>
+                <div className="admin-tabs" style={{ display: "flex", gap: 8, marginBottom: 32, flexWrap: "wrap" }}>
                     {tabBtn("overview", "Overview")}
                     {tabBtn("subscriptions", "Subscriptions")}
                     {tabBtn("groups", "Groups")}
@@ -239,7 +258,7 @@ export default function AdminRoute() {
                             {/* Recent Contributions Table */}
                             {contributions.length > 0 && <>
                                 <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, marginBottom: 16, color: C.green }}>Recent Contributions</h2>
-                                <div style={{ overflowX: "auto", background: C.white, borderRadius: 14, border: `1px solid ${C.brd}`, marginBottom: 40 }}>
+                                <div className="admin-table-wrap" style={{ overflowX: "auto", background: C.white, borderRadius: 14, border: `1px solid ${C.brd}`, marginBottom: 40 }}>
                                     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                                         <thead>
                                             <tr style={{ borderBottom: `1px solid ${C.brdL}` }}>
@@ -267,9 +286,9 @@ export default function AdminRoute() {
 
                         {/* ===== SUBSCRIPTIONS TAB ===== */}
                         {activeTab === "subscriptions" && <>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
+                            <div className="admin-sub-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
                                 <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, color: C.green, margin: 0 }}>Subscription Management</h2>
-                                <div style={{ display: "flex", gap: 6 }}>
+                                <div className="admin-sub-filters" style={{ display: "flex", gap: 6 }}>
                                     {[
                                         { id: "all", l: "All" },
                                         { id: "active", l: "Active" },
@@ -297,7 +316,7 @@ export default function AdminRoute() {
                             </div>
 
                             {filteredContribs.length > 0 ? (
-                                <div style={{ overflowX: "auto", background: C.white, borderRadius: 14, border: `1px solid ${C.brd}` }}>
+                                <div className="admin-table-wrap" style={{ overflowX: "auto", background: C.white, borderRadius: 14, border: `1px solid ${C.brd}` }}>
                                     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                                         <thead>
                                             <tr style={{ borderBottom: `1px solid ${C.brdL}` }}>
@@ -357,7 +376,7 @@ export default function AdminRoute() {
                         {activeTab === "groups" && <>
                             <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, marginBottom: 16, color: C.green }}>Groups</h2>
                             {groups.length > 0 ? (
-                                <div style={{ overflowX: "auto", background: C.white, borderRadius: 14, border: `1px solid ${C.brd}` }}>
+                                <div className="admin-table-wrap" style={{ overflowX: "auto", background: C.white, borderRadius: 14, border: `1px solid ${C.brd}` }}>
                                     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                                         <thead>
                                             <tr style={{ borderBottom: `1px solid ${C.brdL}` }}>
@@ -397,7 +416,7 @@ export default function AdminRoute() {
 
                         {/* ===== ACTIVITY LOG TAB ===== */}
                         {activeTab === "activity" && <>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                            <div className="admin-activity-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
                                 <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, color: C.green, margin: 0 }}>Webhook Activity Log</h2>
                                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                                     <input
@@ -470,7 +489,7 @@ export default function AdminRoute() {
                             )}
 
                             <form onSubmit={handleManualSubmit} style={{ background: C.white, borderRadius: 16, padding: 28, border: `1px solid ${C.brd}` }}>
-                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+                                <div className="admin-grid-2col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
                                     <div>
                                         <label style={{ display: "block", fontSize: 12, textTransform: "uppercase", letterSpacing: 1, color: C.tl, marginBottom: 6, fontWeight: 500 }}>Donor Name *</label>
                                         <input value={manualForm.name} onChange={e => setManualForm({ ...manualForm, name: e.target.value })} style={inp} placeholder="Full name" required />
@@ -545,7 +564,7 @@ export default function AdminRoute() {
                             </div>
 
                             {/* Leaderboard Table */}
-                            <div style={{ background: C.bg, borderRadius: 12, overflow: "hidden", border: `1px solid ${C.brd}` }}>
+                            <div className="admin-table-wrap admin-referral-table" style={{ background: C.bg, borderRadius: 12, overflow: "auto", border: `1px solid ${C.brd}` }}>
                                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                                     <thead>
                                         <tr style={{ borderBottom: `2px solid ${C.brd}` }}>

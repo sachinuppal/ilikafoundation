@@ -221,7 +221,7 @@ export default function ContentEditor() {
 
             {/* ===== CAMPAIGN SETTINGS ===== */}
             <Section title="Campaign Settings" icon="📊" color={C.green} open={openSections.campaign} onToggle={() => toggle("campaign")}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <div className="admin-grid-2col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                     <Field label="Amount Raised (₹)" hint="Total amount shown as raised">
                         <NumberInput value={data.campaign_raised} onChange={v => set("campaign_raised", v)} />
                     </Field>
@@ -246,7 +246,7 @@ export default function ContentEditor() {
             {/* ===== STATS OFFSETS ===== */}
             <Section title="Stats Offsets" icon="📈" color={C.gold} open={openSections.stats} onToggle={() => toggle("stats")}>
                 <p style={{ fontSize: 12, color: C.tl, marginBottom: 16, lineHeight: 1.5 }}>These numbers are added to the real database counts. Set them to the starting count you want before any real contributions come in.</p>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <div className="admin-grid-2col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                     <Field label="Total Sponsors Offset">
                         <NumberInput value={data.stats_total_sponsors_offset} onChange={v => set("stats_total_sponsors_offset", v)} />
                     </Field>
@@ -267,7 +267,7 @@ export default function ContentEditor() {
                 <Field label="Tagline Badge" hint="Badge text above heading (e.g. Women's Day Initiative 2025)">
                     <TextInput value={data.hero_tagline} onChange={v => set("hero_tagline", v)} />
                 </Field>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div className="admin-grid-2col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                     <Field label="Heading Line 1"><TextInput value={data.hero_heading_1} onChange={v => set("hero_heading_1", v)} /></Field>
                     <Field label="Heading Line 2"><TextInput value={data.hero_heading_2} onChange={v => set("hero_heading_2", v)} /></Field>
                     <Field label="Heading Line 3 (italic/gold)"><TextInput value={data.hero_heading_3} onChange={v => set("hero_heading_3", v)} /></Field>
@@ -310,7 +310,7 @@ export default function ContentEditor() {
 
             {/* ===== TESTIMONIAL ===== */}
             <Section title="Testimonial" icon="💬" color={C.gold} open={openSections.testimonial} onToggle={() => toggle("testimonial")}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div className="admin-grid-2col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                     <Field label="Name"><TextInput value={data.testimonial_name} onChange={v => set("testimonial_name", v)} /></Field>
                     <Field label="Role / Title"><TextInput value={data.testimonial_role} onChange={v => set("testimonial_role", v)} /></Field>
                 </div>
@@ -437,7 +437,7 @@ export default function ContentEditor() {
             </Section>
 
             {/* ===== BOTTOM ACTIONS ===== */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 20, padding: "16px 0", borderTop: `1px solid ${C.brd}` }}>
+            <div className="admin-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 20, padding: "16px 0", borderTop: `1px solid ${C.brd}` }}>
                 <button onClick={handleReset} style={{ background: C.redS, border: `1px solid #FECACA`, color: C.red, padding: "8px 20px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>⟲ Reset All to Defaults</button>
                 <button onClick={handleSave} disabled={saving || !dirty} style={{ background: dirty ? `linear-gradient(135deg,${C.green},${C.greenL})` : C.bg, color: dirty ? C.white : C.tl, border: dirty ? "none" : `1px solid ${C.brd}`, padding: "10px 28px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: dirty ? "pointer" : "default", fontFamily: "inherit", opacity: saving ? 0.7 : 1 }}>{saving ? "Saving..." : "Save All Changes"}</button>
             </div>
