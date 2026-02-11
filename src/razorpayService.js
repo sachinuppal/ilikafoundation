@@ -2,7 +2,7 @@
 // Uses Standard Checkout (client-side) — no backend required
 // Set VITE_RAZORPAY_KEY_ID in .env to enable payments
 
-const RAZORPAY_KEY = import.meta.env.VITE_RAZORPAY_KEY_ID;
+const RAZORPAY_KEY = (import.meta.env.VITE_RAZORPAY_KEY_ID || "").trim();
 
 export const isRazorpayConfigured = !!RAZORPAY_KEY && !RAZORPAY_KEY.includes('YOUR_KEY');
 
