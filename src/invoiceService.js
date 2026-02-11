@@ -44,7 +44,6 @@ function amountInWordsHelper(num) {
  * @param {number} [opts.contributionId] - internal DB ID
  * @param {string} [opts.panNumber] - donor's PAN
  * @param {string} [opts.donorType] - 'individual' or 'corporate'
- * @param {string} [opts.gstNumber] - corporate GST number
  * @param {string} [opts.company] - company name
  */
 export function generateDonationReceipt({
@@ -59,7 +58,6 @@ export function generateDonationReceipt({
     contributionId,
     panNumber = "",
     donorType = "individual",
-    gstNumber = "",
     company = "",
 }) {
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
@@ -181,7 +179,6 @@ export function generateDonationReceipt({
         ...(phone ? [["Contact Number:", phone]] : []),
         ["Email ID:", email],
         ...(panNumber ? [["PAN:", panNumber]] : []),
-        ...(donorType === "corporate" && gstNumber ? [["GST No:", gstNumber]] : []),
         ["Amount Received:", `INR ${amount.toLocaleString("en-IN")}/-`],
         ["Amount in Words:", amountInWords(amount)],
         ["Payment Mode:", "Razorpay Online"],
@@ -300,7 +297,6 @@ export function generateReceiptFromContribution(contrib) {
         contributionId: contrib.id,
         panNumber: contrib.pan_number || "",
         donorType: contrib.donor_type || "individual",
-        gstNumber: contrib.gst_number || "",
         company: contrib.company || "",
     });
 }
