@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { C, Heart, Users, Check, BookOpen, Back, GlobalStyles, backBtn } from "./shared.jsx";
-import { getAllGroups, getAllContributions, getRevenueStats, cancelSubscription, exportContributionsCSV, getWebhookEvents, getReferralStats } from "./dataService.js";
+import { getAllGroups, getAllContributions, getRevenueStats, cancelSubscription, exportContributionsCSV, getWebhookEvents, getReferralStats, createManualContribution } from "./dataService.js";
 import { generateReceiptFromContribution } from "./invoiceService.js";
 import ContentEditor from "./ContentEditor.jsx";
 
@@ -21,6 +21,9 @@ export default function AdminRoute() {
     const [eventFilter, setEventFilter] = useState("");
     const [expandedEvent, setExpandedEvent] = useState(null);
     const [referralLeaders, setReferralLeaders] = useState([]);
+    const [manualForm, setManualForm] = useState({ name: "", email: "", phone: "", company: "", amount: "8000", panNumber: "", donorType: "individual", paymentMethod: "cash", notes: "" });
+    const [manualSubmitting, setManualSubmitting] = useState(false);
+    const [manualSuccess, setManualSuccess] = useState(null);
 
     useEffect(() => {
         if (authenticated) loadData();
@@ -92,6 +95,23 @@ export default function AdminRoute() {
             await exportContributionsCSV();
         } catch (err) {
             alert("Export failed: " + err.message);
+        }
+    };
+
+    const handleManualSubmit = async (e) => {
+        e.preventDefault();
+        if (!manualForm.name || !manualForm.phone || !manualForm.amount) return;
+        setManualSubmitting(true);
+        setManualSuccess(null);
+        try {
+            const contrib = await createManualContribution(manualForm);
+            setManualSuccess(contrib);
+            setManualForm({ name: "", email: "", phone: "", company: "", amount: "8000", panNumber: "", donorType: "individual", paymentMethod: "cash", notes: "" });
+            await loadData();
+        } catch (err) {
+            alert("Error: " + err.message);
+        } finally {
+            setManualSubmitting(false);
         }
     };
 
@@ -172,6 +192,7 @@ export default function AdminRoute() {
                     {tabBtn("activity", "Activity Log")}
                     {tabBtn("referrals", "Referrals")}
                     {tabBtn("content", "Site Content")}
+                    {tabBtn("manual", "➕ Manual Entry")}
                 </div>
 
                 {loading ? (
@@ -432,6 +453,75 @@ export default function AdminRoute() {
 
                         {/* ===== CONTENT MANAGEMENT TAB ===== */}
                         {activeTab === "content" && <ContentEditor />}
+
+                        {/* ===== MANUAL ENTRY TAB ===== */}
+                        {activeTab === "manual" && <>
+                            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, marginBottom: 4, color: C.green }}>Manual Offline Payment</h2>
+                            <p style={{ color: C.tl, fontSize: 14, marginBottom: 24 }}>Enter payments received via cash, bank transfer, or cheque. They'll count towards all campaign stats.</p>
+
+                            {manualSuccess && (
+                                <div style={{ background: C.greenS, border: `1px solid ${C.green}30`, borderRadius: 12, padding: 20, marginBottom: 24 }}>
+                                    <div style={{ fontWeight: 600, color: C.green, marginBottom: 8 }}>✅ Payment recorded successfully!</div>
+                                    <div style={{ fontSize: 13, color: C.tm, marginBottom: 12 }}>
+                                        <strong>{manualSuccess.donor_name}</strong> — ₹{Number(manualSuccess.amount).toLocaleString("en-IN")} via {manualSuccess.payment_method || "offline"}
+                                    </div>
+                                    <button onClick={() => { generateReceiptFromContribution(manualSuccess); }} style={{ background: `linear-gradient(135deg,${C.green},${C.greenL})`, color: C.white, border: "none", padding: "10px 20px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>📄 Download Invoice / Receipt</button>
+                                </div>
+                            )}
+
+                            <form onSubmit={handleManualSubmit} style={{ background: C.white, borderRadius: 16, padding: 28, border: `1px solid ${C.brd}` }}>
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+                                    <div>
+                                        <label style={{ display: "block", fontSize: 12, textTransform: "uppercase", letterSpacing: 1, color: C.tl, marginBottom: 6, fontWeight: 500 }}>Donor Name *</label>
+                                        <input value={manualForm.name} onChange={e => setManualForm({ ...manualForm, name: e.target.value })} style={inp} placeholder="Full name" required />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: "block", fontSize: 12, textTransform: "uppercase", letterSpacing: 1, color: C.tl, marginBottom: 6, fontWeight: 500 }}>Email</label>
+                                        <input type="email" value={manualForm.email} onChange={e => setManualForm({ ...manualForm, email: e.target.value })} style={inp} placeholder="email@example.com" />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: "block", fontSize: 12, textTransform: "uppercase", letterSpacing: 1, color: C.tl, marginBottom: 6, fontWeight: 500 }}>Phone *</label>
+                                        <input value={manualForm.phone} onChange={e => setManualForm({ ...manualForm, phone: e.target.value })} style={inp} placeholder="10-digit mobile" required />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: "block", fontSize: 12, textTransform: "uppercase", letterSpacing: 1, color: C.tl, marginBottom: 6, fontWeight: 500 }}>Company / Organization</label>
+                                        <input value={manualForm.company} onChange={e => setManualForm({ ...manualForm, company: e.target.value })} style={inp} placeholder="Optional" />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: "block", fontSize: 12, textTransform: "uppercase", letterSpacing: 1, color: C.tl, marginBottom: 6, fontWeight: 500 }}>Amount (₹) *</label>
+                                        <input type="number" value={manualForm.amount} onChange={e => setManualForm({ ...manualForm, amount: e.target.value })} style={inp} placeholder="8000" required min="1" />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: "block", fontSize: 12, textTransform: "uppercase", letterSpacing: 1, color: C.tl, marginBottom: 6, fontWeight: 500 }}>PAN Number</label>
+                                        <input value={manualForm.panNumber} onChange={e => setManualForm({ ...manualForm, panNumber: e.target.value.toUpperCase() })} style={inp} placeholder="ABCDE1234F" maxLength={10} />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: "block", fontSize: 12, textTransform: "uppercase", letterSpacing: 1, color: C.tl, marginBottom: 6, fontWeight: 500 }}>Donor Type</label>
+                                        <select value={manualForm.donorType} onChange={e => setManualForm({ ...manualForm, donorType: e.target.value })} style={{ ...inp, cursor: "pointer" }}>
+                                            <option value="individual">Individual</option>
+                                            <option value="corporate">Corporate</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style={{ display: "block", fontSize: 12, textTransform: "uppercase", letterSpacing: 1, color: C.tl, marginBottom: 6, fontWeight: 500 }}>Payment Method</label>
+                                        <select value={manualForm.paymentMethod} onChange={e => setManualForm({ ...manualForm, paymentMethod: e.target.value })} style={{ ...inp, cursor: "pointer" }}>
+                                            <option value="cash">Cash</option>
+                                            <option value="bank_transfer">Bank Transfer (NEFT/IMPS/RTGS)</option>
+                                            <option value="cheque">Cheque</option>
+                                            <option value="upi">UPI</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div style={{ marginBottom: 20 }}>
+                                    <label style={{ display: "block", fontSize: 12, textTransform: "uppercase", letterSpacing: 1, color: C.tl, marginBottom: 6, fontWeight: 500 }}>Notes</label>
+                                    <textarea value={manualForm.notes} onChange={e => setManualForm({ ...manualForm, notes: e.target.value })} style={{ ...inp, minHeight: 60, resize: "vertical" }} placeholder="Reference number, cheque details, etc." />
+                                </div>
+                                <button type="submit" disabled={manualSubmitting} style={{ background: `linear-gradient(135deg,${C.green},${C.greenL})`, color: C.white, border: "none", padding: "14px 32px", borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: manualSubmitting ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: manualSubmitting ? 0.7 : 1 }}>
+                                    {manualSubmitting ? "Recording..." : "✅ Record Payment & Generate Receipt"}
+                                </button>
+                            </form>
+                        </>}
 
                         {/* ===== REFERRALS TAB ===== */}
                         {activeTab === "referrals" && <>

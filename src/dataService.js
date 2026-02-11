@@ -192,7 +192,47 @@ export async function createIndividualContribution({ name, email, phone, company
     }
 }
 
-// ===== REFERRAL STATS =====
+// ===== MANUAL OFFLINE PAYMENT =====
+export async function createManualContribution({ name, email, phone, company, amount, panNumber, donorType, paymentMethod, notes }) {
+    const contribData = {
+        donor_name: name,
+        email,
+        phone,
+        company: company || null,
+        type: "individual",
+        payment_preference: "one-time",
+        payment_status: "Success",
+        amount: Number(amount),
+        referral_code: null,
+        referred_by: null,
+        pan_number: panNumber || null,
+        donor_type: donorType || "individual",
+        payment_method: paymentMethod || "offline",
+        notes: notes || null,
+        razorpay_payment_id: `MANUAL_${Date.now()}`,
+    };
+
+    if (isSupabaseConfigured) {
+        const { data, error } = await supabase.from("contributions").insert(contribData).select().single();
+        if (error) {
+            // Retry without optional new columns if they don't exist in DB yet
+            const { payment_method, notes, ...coreData } = contribData;
+            const { data: d2, error: e2 } = await supabase.from("contributions").insert(coreData).select().single();
+            if (e2) throw e2;
+            return { ...d2, payment_method, notes };
+        }
+        return data;
+    } else {
+        const entry = {
+            ...contribData,
+            id: Date.now(),
+            created_at: new Date().toISOString(),
+        };
+        memContribs.push(entry);
+        return entry;
+    }
+}
+
 export async function getReferralStats() {
     if (!isSupabaseConfigured) return [];
     const { data, error } = await supabase
