@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { C, Check, Users, Share, Arrow, Back, Clock, Facepile, GlobalStyles, inp, lbl, backBtn } from "./shared.jsx";
-import { getGroupBySlug, joinGroup } from "./dataService.js";
+import { getGroupBySlug, joinGroup, updatePaymentStatus } from "./dataService.js";
+import { openRazorpayCheckout } from "./razorpayService.js";
 
 export default function GroupPageRoute() {
     const { slug } = useParams();
@@ -37,9 +38,29 @@ export default function GroupPageRoute() {
         if (!form.name || !form.email || !form.phone) return;
         try {
             const updated = await joinGroup(group.group_id, form);
-            setGroup(updated);
-            setSubmitted(true);
-            setShowForm(false);
+            // Open Razorpay for group contribution
+            openRazorpayCheckout({
+                amount: 2000,
+                name: form.name,
+                email: form.email,
+                phone: form.phone,
+                description: `Ilika Fellowship — Group Sponsorship with ${group.initiator_name}`,
+                paymentType: "group",
+                paymentPreference: "monthly",
+                onSuccess: async () => {
+                    setGroup(updated);
+                    setSubmitted(true);
+                    setShowForm(false);
+                },
+                onFailure: (err) => {
+                    setGroup(updated);
+                    setSubmitted(true);
+                    setShowForm(false);
+                    if (err.message !== "Payment cancelled by user") {
+                        console.warn("Payment issue:", err.message);
+                    }
+                },
+            });
         } catch (err) {
             alert("Error joining group: " + err.message);
         }

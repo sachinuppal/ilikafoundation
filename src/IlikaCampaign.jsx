@@ -6,7 +6,8 @@ import {
   CampaignProgress, RecentSupporters, UrgencyBanner, ImpactCalculator,
   inp, lbl, Share
 } from "./shared.jsx";
-import { createIndividualContribution, createGroup, getCampaignStats } from "./dataService.js";
+import { createIndividualContribution, createGroup, getCampaignStats, updatePaymentStatus } from "./dataService.js";
+import { openRazorpayCheckout, isRazorpayConfigured } from "./razorpayService.js";
 
 export default function IlikaCampaign() {
   const navigate = useNavigate();
@@ -17,6 +18,7 @@ export default function IlikaCampaign() {
   const [m, setM] = useState(false);
   const [stats, setStats] = useState({ totalSponsors: 127, girlsSponsored: 15, individualCount: 42, groupCount: 23 });
   const [submitting, setSubmitting] = useState(false);
+  const [paymentProcessing, setPaymentProcessing] = useState(false);
   const sponsorRef = useRef(null);
 
   useEffect(() => { setM(true); loadStats(); }, []);
@@ -39,11 +41,32 @@ export default function IlikaCampaign() {
     if (!indF.name || !indF.email || !indF.phone) return;
     setSubmitting(true);
     try {
-      await createIndividualContribution(indF);
-      setDone(true);
+      const contrib = await createIndividualContribution(indF);
+      setSubmitting(false);
+      setPaymentProcessing(true);
+      // Open Razorpay checkout
+      openRazorpayCheckout({
+        amount: indF.payment === "annual" ? 96000 : 8000,
+        name: indF.name,
+        email: indF.email,
+        phone: indF.phone,
+        description: indF.payment === "annual" ? "Ilika Fellowship — Annual Sponsorship" : "Ilika Fellowship — Monthly Sponsorship",
+        paymentType: "individual",
+        paymentPreference: indF.payment,
+        onSuccess: async (response) => {
+          try {
+            await updatePaymentStatus(contrib.id, response.razorpay_payment_id, "Success");
+          } catch (e) { console.error("Failed to update payment status:", e); }
+          setPaymentProcessing(false);
+          setDone(true);
+        },
+        onFailure: (err) => {
+          setPaymentProcessing(false);
+          if (err.message !== "Payment cancelled by user") alert("Payment failed: " + err.message);
+        },
+      });
     } catch (err) {
       alert("Error: " + err.message);
-    } finally {
       setSubmitting(false);
     }
   };
@@ -53,10 +76,30 @@ export default function IlikaCampaign() {
     setSubmitting(true);
     try {
       const group = await createGroup(grpF);
-      navigate(`/group/${group.slug}`);
+      setSubmitting(false);
+      setPaymentProcessing(true);
+      // Open Razorpay for initial group contribution
+      openRazorpayCheckout({
+        amount: 2000,
+        name: grpF.name,
+        email: grpF.email,
+        phone: grpF.phone,
+        description: "Ilika Fellowship — Group Sponsorship (₹2,000/person)",
+        paymentType: "group",
+        paymentPreference: "monthly",
+        onSuccess: async () => {
+          setPaymentProcessing(false);
+          navigate(`/group/${group.slug}`);
+        },
+        onFailure: (err) => {
+          setPaymentProcessing(false);
+          if (err.message !== "Payment cancelled by user") alert("Payment failed: " + err.message);
+          // Still navigate to group page even if payment fails
+          navigate(`/group/${group.slug}`);
+        },
+      });
     } catch (err) {
       alert("Error: " + err.message);
-    } finally {
       setSubmitting(false);
     }
   };

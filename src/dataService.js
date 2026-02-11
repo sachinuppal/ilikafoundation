@@ -183,3 +183,116 @@ export async function getCampaignStats() {
         };
     }
 }
+
+// ===== PAYMENT STATUS UPDATES =====
+export async function updatePaymentStatus(contributionId, razorpayPaymentId, status = "Success") {
+    if (isSupabaseConfigured) {
+        const { data, error } = await supabase
+            .from("contributions")
+            .update({
+                payment_status: status,
+                razorpay_payment_id: razorpayPaymentId,
+                subscription_status: status === "Success" ? "active" : "cancelled",
+                total_payments_made: 1,
+                next_payment_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            })
+            .eq("id", contributionId)
+            .select()
+            .single();
+        if (error) throw error;
+        return data;
+    } else {
+        memContribs = memContribs.map(c =>
+            c.id === contributionId
+                ? { ...c, payment_status: status, razorpay_payment_id: razorpayPaymentId, subscription_status: "active", total_payments_made: 1 }
+                : c
+        );
+        return memContribs.find(c => c.id === contributionId);
+    }
+}
+
+// ===== SUBSCRIPTION MANAGEMENT (ADMIN) =====
+export async function getSubscriptionsByStatus(status = null) {
+    if (isSupabaseConfigured) {
+        let query = supabase.from("contributions").select("*").order("created_at", { ascending: false });
+        if (status) query = query.eq("subscription_status", status);
+        const { data, error } = await query;
+        if (error) throw error;
+        return data;
+    } else {
+        if (status) return memContribs.filter(c => (c.subscription_status || "active") === status);
+        return [...memContribs];
+    }
+}
+
+export async function cancelSubscription(contributionId) {
+    if (isSupabaseConfigured) {
+        const { data, error } = await supabase
+            .from("contributions")
+            .update({
+                subscription_status: "cancelled",
+                cancelled_at: new Date().toISOString(),
+            })
+            .eq("id", contributionId)
+            .select()
+            .single();
+        if (error) throw error;
+        return data;
+    } else {
+        memContribs = memContribs.map(c =>
+            c.id === contributionId
+                ? { ...c, subscription_status: "cancelled", cancelled_at: new Date().toISOString() }
+                : c
+        );
+        return memContribs.find(c => c.id === contributionId);
+    }
+}
+
+// ===== REVENUE ANALYTICS =====
+export async function getRevenueStats() {
+    const contribs = isSupabaseConfigured
+        ? (await supabase.from("contributions").select("*").eq("payment_status", "Success")).data || []
+        : memContribs.filter(c => c.payment_status === "Success");
+
+    const totalCollected = contribs.reduce((s, c) => s + (c.amount || 0), 0);
+    const monthlyContribs = contribs.filter(c => c.payment_preference !== "annual");
+    const annualContribs = contribs.filter(c => c.payment_preference === "annual");
+    const mrr = monthlyContribs.reduce((s, c) => s + (c.amount || 0), 0);
+    const arr = annualContribs.reduce((s, c) => s + (c.amount || 0), 0);
+    const activeCount = contribs.filter(c => (c.subscription_status || "active") === "active").length;
+    const cancelledCount = contribs.filter(c => c.subscription_status === "cancelled").length;
+
+    return {
+        totalCollected,
+        mrr,
+        arr,
+        avgContribution: contribs.length > 0 ? Math.round(totalCollected / contribs.length) : 0,
+        activeSubscriptions: activeCount,
+        cancelledSubscriptions: cancelledCount,
+        totalTransactions: contribs.length,
+    };
+}
+
+// ===== CSV EXPORT =====
+export async function exportContributionsCSV() {
+    const contribs = isSupabaseConfigured
+        ? (await supabase.from("contributions").select("*").order("created_at", { ascending: false })).data || []
+        : [...memContribs];
+
+    const headers = ["ID", "Donor Name", "Email", "Phone", "Company", "Type", "Amount", "Payment Preference", "Payment Status", "Razorpay Payment ID", "Subscription Status", "Group ID", "Created At"];
+    const rows = contribs.map(c => [
+        c.id, c.donor_name, c.email, c.phone || "", c.company || "", c.type,
+        c.amount || 0, c.payment_preference || "", c.payment_status,
+        c.razorpay_payment_id || "", c.subscription_status || "active",
+        c.group_id || "", c.created_at || "",
+    ]);
+
+    const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `ilika-contributions-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+}

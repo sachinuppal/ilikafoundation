@@ -50,3 +50,11 @@ CREATE POLICY "Allow public update on groups" ON groups FOR UPDATE USING (true);
 CREATE POLICY "Allow public read on contributions" ON contributions FOR SELECT USING (true);
 CREATE POLICY "Allow public insert on contributions" ON contributions FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow public update on contributions" ON contributions FOR UPDATE USING (true);
+
+-- Subscription tracking columns (run as ALTER if tables already exist)
+ALTER TABLE contributions ADD COLUMN IF NOT EXISTS subscription_status TEXT DEFAULT 'active' CHECK (subscription_status IN ('active', 'cancelled', 'paused', 'completed'));
+ALTER TABLE contributions ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMPTZ;
+ALTER TABLE contributions ADD COLUMN IF NOT EXISTS next_payment_date TIMESTAMPTZ;
+ALTER TABLE contributions ADD COLUMN IF NOT EXISTS total_payments_made INT DEFAULT 0;
+
+CREATE INDEX IF NOT EXISTS idx_contributions_subscription_status ON contributions(subscription_status);
