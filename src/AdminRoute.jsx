@@ -141,9 +141,11 @@ export default function AdminRoute() {
 
     const filteredContribs = subFilter === "all" ? contributions
         : subFilter === "active" ? contributions.filter(c => c.payment_status === "Success" && (c.subscription_status || "active") === "active")
-            : subFilter === "cancelled" ? contributions.filter(c => c.subscription_status === "cancelled")
+            : subFilter === "cancelled" ? contributions.filter(c => c.subscription_status === "cancelled" || c.payment_status === "Cancelled")
                 : subFilter === "pending" ? contributions.filter(c => c.payment_status === "Pending")
-                    : contributions;
+                    : subFilter === "failed" ? contributions.filter(c => c.payment_status === "Failed")
+                        : subFilter === "refunded" ? contributions.filter(c => c.payment_status === "Refunded")
+                            : contributions;
 
     return (
         <div style={{ minHeight: "100vh", background: C.bg, color: C.td, fontFamily: "'DM Sans', sans-serif" }}>
@@ -230,7 +232,7 @@ export default function AdminRoute() {
                                                     <td style={{ ...td, color: C.tl, fontSize: 12 }}>{c.email}</td>
                                                     <td style={td}>{badge(c.type, c.type === "individual" ? C.goldS : C.greenS, c.type === "individual" ? C.gold : C.green)}</td>
                                                     <td style={td}>{c.amount ? `\u20B9${c.amount.toLocaleString()}` : "\u2014"}</td>
-                                                    <td style={td}><span style={{ color: c.payment_status === "Success" ? C.green : C.gold, fontWeight: 500, fontSize: 12 }}>{c.payment_status}</span></td>
+                                                    <td style={td}><span style={{ color: c.payment_status === "Success" ? C.green : c.payment_status === "Pending" ? C.gold : c.payment_status === "Failed" ? "#c0392b" : c.payment_status === "Refunded" ? "#e67e22" : c.payment_status === "Cancelled" ? "#95a5a6" : C.gold, fontWeight: 500, fontSize: 12 }}>{c.payment_status}</span></td>
                                                     <td style={{ ...td, color: C.tl, fontSize: 11, fontFamily: "monospace" }}>{c.razorpay_payment_id || "\u2014"}</td>
                                                     <td style={{ ...td, color: C.tl, fontSize: 12 }}>{c.created_at ? new Date(c.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : "\u2014"}</td>
                                                     <td style={td}><button onClick={() => generateReceiptFromContribution(c)} style={{ background: "none", border: `1px solid ${C.brd}`, color: C.green, padding: "3px 8px", borderRadius: 4, fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>📄</button></td>
@@ -250,8 +252,10 @@ export default function AdminRoute() {
                                     {[
                                         { id: "all", l: "All" },
                                         { id: "active", l: "Active" },
-                                        { id: "cancelled", l: "Cancelled" },
                                         { id: "pending", l: "Pending" },
+                                        { id: "failed", l: "Failed" },
+                                        { id: "cancelled", l: "Cancelled" },
+                                        { id: "refunded", l: "Refunded" },
                                     ].map(f => (
                                         <button key={f.id} onClick={() => setSubFilter(f.id)} style={{
                                             background: subFilter === f.id ? C.greenS : "transparent",
@@ -261,8 +265,11 @@ export default function AdminRoute() {
                                         }}>{f.l} ({
                                                 f.id === "all" ? contributions.length
                                                     : f.id === "active" ? contributions.filter(c => c.payment_status === "Success" && (c.subscription_status || "active") === "active").length
-                                                        : f.id === "cancelled" ? contributions.filter(c => c.subscription_status === "cancelled").length
-                                                            : contributions.filter(c => c.payment_status === "Pending").length
+                                                        : f.id === "cancelled" ? contributions.filter(c => c.subscription_status === "cancelled" || c.payment_status === "Cancelled").length
+                                                            : f.id === "pending" ? contributions.filter(c => c.payment_status === "Pending").length
+                                                                : f.id === "failed" ? contributions.filter(c => c.payment_status === "Failed").length
+                                                                    : f.id === "refunded" ? contributions.filter(c => c.payment_status === "Refunded").length
+                                                                        : 0
                                             })</button>
                                     ))}
                                 </div>

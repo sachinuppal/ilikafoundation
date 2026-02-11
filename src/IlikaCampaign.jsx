@@ -6,7 +6,7 @@ import {
   CampaignProgress, RecentSupporters, UrgencyBanner, GirlsProgress, TopDonors,
   inp, lbl, Share
 } from "./shared.jsx";
-import { createIndividualContribution, createGroup, getCampaignStats, updatePaymentStatus, getReferralStats } from "./dataService.js";
+import { createIndividualContribution, createGroup, getCampaignStats, updatePaymentStatus, cancelContribution, getReferralStats } from "./dataService.js";
 import { openRazorpayCheckout, isRazorpayConfigured } from "./razorpayService.js";
 import { generateDonationReceipt } from "./invoiceService.js";
 import { StatusToast, ToastStyles, useToast } from "./statusToast.jsx";
@@ -90,8 +90,12 @@ export default function IlikaCampaign() {
         },
         onFailure: (err) => {
           setPaymentProcessing(false);
+          // Cancel the pending contribution in DB
+          cancelContribution(contrib.id).catch(() => { });
           if (err.message !== "Payment cancelled by user") {
             showToast("payment_failed");
+          } else {
+            showCustomToast("info", "Payment Cancelled", "No charges were made. You can try again anytime.");
           }
         },
       });
@@ -124,10 +128,14 @@ export default function IlikaCampaign() {
         },
         onFailure: (err) => {
           setPaymentProcessing(false);
+          // Cancel the pending group contribution
+          cancelContribution(group.initiator_contribution_id || 0).catch(() => { });
           if (err.message !== "Payment cancelled by user") {
             showToast("payment_failed");
+          } else {
+            showCustomToast("info", "Payment Cancelled", "Your group was created but payment was not completed. You can pay later from the group page.");
           }
-          // Still navigate to group page even if payment fails
+          // Still navigate to group page so they can complete payment later
           navigate(`/group/${group.slug}`);
         },
       });

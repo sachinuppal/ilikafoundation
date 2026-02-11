@@ -106,6 +106,49 @@ export async function joinGroup(group_id, { name, email, phone }) {
     }
 }
 
+/** Revert a group join when payment fails/cancels */
+export async function unjoinGroup(group_id, email) {
+    if (isSupabaseConfigured) {
+        // Delete the pending contribution
+        await supabase
+            .from("contributions")
+            .delete()
+            .eq("group_id", group_id)
+            .eq("email", email)
+            .eq("payment_status", "Pending");
+        // Decrement filled_slots
+        const { data: group } = await supabase.from("groups").select("*").eq("group_id", group_id).single();
+        if (group && group.filled_slots > 0) {
+            await supabase
+                .from("groups")
+                .update({ filled_slots: group.filled_slots - 1, status: "Open" })
+                .eq("group_id", group_id);
+        }
+    } else {
+        memContribs = memContribs.filter(c => !(c.group_id === group_id && c.email === email && c.payment_status === "Pending"));
+        memGroups = memGroups.map(g =>
+            g.group_id === group_id ? { ...g, filled_slots: Math.max(0, g.filled_slots - 1), status: "Open" } : g
+        );
+    }
+}
+
+/** Cancel a contribution when payment is dismissed/cancelled */
+export async function cancelContribution(contributionId) {
+    if (isSupabaseConfigured) {
+        await supabase
+            .from("contributions")
+            .update({ payment_status: "Cancelled" })
+            .eq("id", contributionId)
+            .eq("payment_status", "Pending");
+    } else {
+        memContribs = memContribs.map(c =>
+            c.id === contributionId && c.payment_status === "Pending"
+                ? { ...c, payment_status: "Cancelled" }
+                : c
+        );
+    }
+}
+
 // ===== INDIVIDUAL CONTRIBUTIONS =====
 
 /** Generate a short referral code from the donor name, e.g. "sachin-uppal-x3k7" */

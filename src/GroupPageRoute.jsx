@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { C, Check, Users, Share, Arrow, Back, Clock, Facepile, GlobalStyles, inp, lbl, backBtn } from "./shared.jsx";
-import { getGroupBySlug, joinGroup, updatePaymentStatus } from "./dataService.js";
+import { getGroupBySlug, joinGroup, unjoinGroup, updatePaymentStatus } from "./dataService.js";
 import { openRazorpayCheckout } from "./razorpayService.js";
 import { StatusToast, ToastStyles, useToast } from "./statusToast.jsx";
 
@@ -55,12 +55,16 @@ export default function GroupPageRoute() {
                     setShowForm(false);
                     showToast("payment_success");
                 },
-                onFailure: (err) => {
-                    setGroup(updated);
-                    setSubmitted(true);
+                onFailure: async (err) => {
+                    // Revert the group join — remove pending contribution & decrement slot
+                    try { await unjoinGroup(group.group_id, form.email); } catch (e) { console.warn("Unjoin cleanup:", e); }
+                    // Reload fresh group data
+                    try { const fresh = await getGroupBySlug(slug); if (fresh) setGroup(fresh); } catch (e) { /* silent */ }
                     setShowForm(false);
                     if (err.message !== "Payment cancelled by user") {
-                        console.warn("Payment issue:", err.message);
+                        showCustomToast("failed", "Payment Failed", "Your payment could not be processed. Please try again.");
+                    } else {
+                        showCustomToast("info", "Payment Cancelled", "No charges were made. You can try again anytime.");
                     }
                 },
             });
@@ -129,7 +133,10 @@ export default function GroupPageRoute() {
                 ) : (
                     <div style={{ background: C.white, borderRadius: 16, padding: 28, border: `1px solid ${C.brd}`, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}><h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, marginBottom: 4, color: C.green }}>Join this group</h3><p style={{ color: C.tl, fontSize: 12, marginBottom: 20 }}>Takes less than 60 seconds</p>{["name", "email", "phone"].map(f => <div key={f} style={{ marginBottom: 16 }}><label style={lbl}>{f}</label><input type={f === "email" ? "email" : f === "phone" ? "tel" : "text"} value={form[f]} onChange={e => setForm({ ...form, [f]: e.target.value })} style={inp} placeholder={f === "name" ? "Your full name" : f === "email" ? "you@email.com" : "+91 XXXXX XXXXX"} /></div>)}<button onClick={handleJoin} style={{ width: "100%", background: `linear-gradient(135deg,${C.green},${C.greenL})`, color: C.white, border: "none", padding: "14px", borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", marginTop: 8 }}>Confirm & Proceed to Payment</button><p style={{ textAlign: "center", fontSize: 11, color: C.tl, marginTop: 10 }}>Secure Razorpay {"\u00B7"} 80G tax receipt {"\u00B7"} Cancel anytime</p></div>
                 )}
-                {!done && !submitted && <div style={{ marginTop: 24, textAlign: "center" }}><button onClick={() => { const t = `I'm sponsoring a girl's education this Women's Day through Ilika. Join my group — only ${left} spot${left !== 1 ? "s" : ""} left!\n${window.location.href}`; if (navigator.share) navigator.share({ text: t }); else navigator.clipboard?.writeText(t); }} style={{ background: "none", border: `1px solid ${C.brd}`, color: C.tm, padding: "10px 20px", borderRadius: 8, fontSize: 13, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 8 }}><Share /> Share via WhatsApp or copy link</button></div>}
+                {!done && !submitted && <div style={{ marginTop: 24, display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+                    <a href={`https://wa.me/?text=${encodeURIComponent(`I'm sponsoring a girl's education this Women's Day through Ilika. Join my group — only ${left} spot${left !== 1 ? "s" : ""} left!\n${window.location.href}`)}`} target="_blank" rel="noopener noreferrer" style={{ background: "#25D366", color: "#fff", padding: "12px 24px", borderRadius: 8, fontSize: 14, fontWeight: 600, fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 8, textDecoration: "none", border: "none", cursor: "pointer" }}>💬 Share on WhatsApp</a>
+                    <button onClick={() => { navigator.clipboard?.writeText(window.location.href); showCustomToast("success", "Link Copied!", "Share this link with friends to fill your group."); }} style={{ background: C.white, border: `2px solid ${C.green}`, color: C.green, padding: "12px 24px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 8 }}>📋 Copy Link</button>
+                </div>}
             </div>
         </div>
     );
