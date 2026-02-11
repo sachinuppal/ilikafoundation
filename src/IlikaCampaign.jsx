@@ -150,7 +150,7 @@ export default function IlikaCampaign() {
   const secStyle = { maxWidth: 760, margin: "0 auto", padding: "0 28px" };
 
   return (
-    <div style={{ minHeight: "100vh", background: C.bg, color: C.td, fontFamily: "'DM Sans', sans-serif", overflow: "hidden" }}>
+    <div style={{ minHeight: "100vh", background: C.bg, color: C.td, fontFamily: "'DM Sans', sans-serif", overflowX: "hidden" }}>
       <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       <GlobalStyles />
       <ToastStyles />
@@ -185,10 +185,10 @@ export default function IlikaCampaign() {
               <p style={{ fontSize: "clamp(14px, 1.8vw, 17px)", lineHeight: 1.8, color: C.tm, maxWidth: 480, marginBottom: 28, fontWeight: 300 }}>
                 {getContent("hero_description")}
               </p>
-              {/* Hero CTAs with pricing — equal width, side by side */}
-              <div style={{ display: "flex", gap: 12, marginBottom: 24 }}>
-                <button onClick={() => { setOpt(1); setDone(false); setShowModal(true); setShowRetention(false); scrollToSponsor(); }} style={{ flex: 1, background: `linear-gradient(135deg,${C.gold},${C.goldL})`, color: C.white, border: "none", padding: "14px 16px", borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: `0 4px 20px ${C.gold}33`, whiteSpace: "nowrap" }}>Sponsor a Girl — {"\u20B9"}8,000/mo <Arrow /></button>
-                <button onClick={() => { setOpt(2); setDone(false); setShowModal(true); setShowRetention(false); scrollToSponsor(); }} style={{ flex: 1, background: C.white, color: C.green, border: `2px solid ${C.green}`, padding: "14px 16px", borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, whiteSpace: "nowrap" }}>Split with Friends — {"\u20B9"}2,000/mo <Users s={16} /></button>
+              {/* Hero CTAs with pricing — stack on mobile */}
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 24 }}>
+                <button onClick={() => { setOpt(1); setDone(false); setShowModal(true); setShowRetention(false); scrollToSponsor(); }} style={{ flex: "1 1 100%", background: `linear-gradient(135deg,${C.gold},${C.goldL})`, color: C.white, border: "none", padding: "14px 16px", borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: `0 4px 20px ${C.gold}33` }}>Sponsor a Girl — {"\u20B9"}8,000/mo <Arrow /></button>
+                <button onClick={() => { setOpt(2); setDone(false); setShowModal(true); setShowRetention(false); scrollToSponsor(); }} style={{ flex: "1 1 100%", background: C.white, color: C.green, border: `2px solid ${C.green}`, padding: "14px 16px", borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>Split with Friends — {"\u20B9"}2,000/mo <Users s={16} /></button>
               </div>
               <p style={{ fontSize: 12, color: C.tl, marginBottom: 0 }}>80G tax exemption {"\u00B7"} Secure Razorpay {"\u00B7"} Cancel anytime</p>
             </div>
@@ -202,7 +202,7 @@ export default function IlikaCampaign() {
                 </div>
               </div>
               {/* Floating badge */}
-              <div style={{ position: "absolute", top: -12, right: -12, background: C.gold, color: C.white, borderRadius: 12, padding: "10px 16px", fontSize: 12, fontWeight: 600, boxShadow: "0 4px 16px rgba(200,150,46,0.3)", display: "flex", alignItems: "center", gap: 6, zIndex: 2 }}><Heart s={14} /> {stats.girlsSponsored}+ Futures Changed</div>
+              <div style={{ position: "absolute", top: -12, right: 8, background: C.gold, color: C.white, borderRadius: 12, padding: "10px 16px", fontSize: 12, fontWeight: 600, boxShadow: "0 4px 16px rgba(200,150,46,0.3)", display: "flex", alignItems: "center", gap: 6, zIndex: 2 }}><Heart s={14} /> {stats.girlsSponsored}+ Futures Changed</div>
             </div>
           </div>
         </section>
@@ -279,7 +279,7 @@ export default function IlikaCampaign() {
             <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 2, color: C.gold, fontWeight: 600, marginBottom: 12 }}>The Ilika Fellowship</div>
             <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(22px, 3.5vw, 32px)", lineHeight: 1.25, color: C.green, marginBottom: 16 }}>You're not paying for a degree.<br />You're building an ecosystem around her.</h2>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 16 }}>
             {[
               { icon: <BookOpen s={22} />, title: "Guided", desc: "Paired with a dedicated guide through every challenge and milestone of her undergraduate journey.", color: C.green },
               { icon: <Heart s={22} />, title: "Nurtured", desc: "Beyond tuition — learning tools, life skills coaching, well-being support, and holistic development.", color: C.gold },
@@ -303,7 +303,7 @@ export default function IlikaCampaign() {
 
         {/* ============ TESTIMONIAL + TOP DONORS + RECENT SUPPORTERS ============ */}
         <section style={{ ...secStyle, padding: "48px 28px", ...an(0.24) }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 20 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 20 }}>
             {/* Testimonials — stacked vertically */}
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
               {[
