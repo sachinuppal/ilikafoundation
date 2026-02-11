@@ -34,6 +34,8 @@ export default function IlikaCampaign() {
   const [referralLeaders, setReferralLeaders] = useState([]);
   const sponsorRef = useRef(null);
   const { toast, showToast, showCustomToast, dismissToast } = useToast();
+  const [tIdx, setTIdx] = useState(0);
+  useEffect(() => { const t = setInterval(() => setTIdx(p => p + 1), 6000); return () => clearInterval(t); }, []);
 
   useEffect(() => {
     setM(true);
@@ -189,8 +191,7 @@ export default function IlikaCampaign() {
                 <button onClick={() => { setOpt(1); setDone(false); setShowModal(true); setShowRetention(false); scrollToSponsor(); }} style={{ flex: 1, background: `linear-gradient(135deg,${C.gold},${C.goldL})`, color: C.white, border: "none", padding: "14px 16px", borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: `0 4px 20px ${C.gold}33`, whiteSpace: "nowrap" }}>Sponsor a Girl — {"\u20B9"}8,000/mo <Arrow /></button>
                 <button onClick={() => { setOpt(2); setDone(false); setShowModal(true); setShowRetention(false); scrollToSponsor(); }} style={{ flex: 1, background: C.white, color: C.green, border: `2px solid ${C.green}`, padding: "14px 16px", borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, whiteSpace: "nowrap" }}>Split with Friends — {"\u20B9"}2,000/mo <Users s={16} /></button>
               </div>
-              <p style={{ fontSize: 12, color: C.tl, marginBottom: 16 }}>80G tax exemption {"\u00B7"} Secure Razorpay {"\u00B7"} Cancel anytime</p>
-              <Facepile count={7} size={34} label={<span><strong style={{ color: C.td }}>{stats.totalSponsors} sponsors</strong> have already joined</span>} />
+              <p style={{ fontSize: 12, color: C.tl, marginBottom: 0 }}>80G tax exemption {"\u00B7"} Secure Razorpay {"\u00B7"} Cancel anytime</p>
             </div>
             {/* Right - Hero image */}
             <div style={{ flex: "1 1 340px", minWidth: 280, maxWidth: 440, position: "relative" }}>
@@ -304,18 +305,31 @@ export default function IlikaCampaign() {
         {/* ============ TESTIMONIAL + TOP DONORS + RECENT SUPPORTERS ============ */}
         <section style={{ ...secStyle, padding: "48px 28px", ...an(0.24) }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 20 }}>
-            {/* Testimonial */}
-            <div style={{ background: C.white, borderRadius: 16, padding: "28px 24px", border: `1px solid ${C.brdL}`, position: "relative" }}>
-              <div style={{ position: "absolute", top: 16, left: 20, color: C.gold }}><Quote s={36} /></div>
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-                <div style={{ width: 44, height: 44, borderRadius: "50%", background: C.gold, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 16, fontWeight: 600 }}>K</div>
-                <div><div style={{ fontWeight: 600, color: C.td }}>{getContent("testimonial_name")}</div><div style={{ fontSize: 12, color: C.tl }}>{getContent("testimonial_role")}</div></div>
-                <div style={{ marginLeft: "auto", display: "flex", gap: 2, color: C.gold }}>{[1, 2, 3, 4, 5].map(i => <Star key={i} />)}</div>
-              </div>
-              <p style={{ fontFamily: "'Playfair Display', serif", fontSize: 16, lineHeight: 1.7, color: C.green, marginBottom: 12 }}>"{getContent("testimonial_quote")}"</p>
-              <p style={{ fontSize: 13, lineHeight: 1.7, color: C.tm, marginBottom: 12 }}>{getContent("testimonial_story")}</p>
-              <div style={{ padding: "10px 14px", background: C.greenS, borderRadius: 8, fontSize: 12, color: C.green, fontStyle: "italic" }}>"{getContent("testimonial_closing")}"</div>
-            </div>
+            {/* Testimonial Carousel */}
+            {(() => {
+              const testimonials = [
+                { initial: "K", name: getContent("testimonial_name"), role: getContent("testimonial_role"), quote: getContent("testimonial_quote"), story: getContent("testimonial_story"), closing: getContent("testimonial_closing") },
+                { initial: "S", name: "Sajiya Khan", role: "Ilika Fellow", quote: "I'm deeply grateful to Ilika for supporting my education.", story: "Before their help, my family struggled to make ends meet, and my parents were worried about my future. Ilika not only sponsored my education but also provided additional courses and training that boosted my confidence and helped me grow overall. Because of their support, I've learned new skills and made great progress in my studies.", closing: "I feel proud and thankful to be a part of Ilika." },
+              ];
+              const t = testimonials[tIdx % testimonials.length];
+              return (
+                <div style={{ background: C.white, borderRadius: 16, padding: "28px 24px", border: `1px solid ${C.brdL}`, position: "relative", transition: "opacity 0.4s ease", minHeight: 280 }}>
+                  <div style={{ position: "absolute", top: 16, left: 20, color: C.gold }}><Quote s={36} /></div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+                    <div style={{ width: 44, height: 44, borderRadius: "50%", background: C.gold, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 16, fontWeight: 600 }}>{t.initial}</div>
+                    <div><div style={{ fontWeight: 600, color: C.td }}>{t.name}</div><div style={{ fontSize: 12, color: C.tl }}>{t.role}</div></div>
+                    <div style={{ marginLeft: "auto", display: "flex", gap: 2, color: C.gold }}>{[1, 2, 3, 4, 5].map(i => <Star key={i} />)}</div>
+                  </div>
+                  <p style={{ fontFamily: "'Playfair Display', serif", fontSize: 16, lineHeight: 1.7, color: C.green, marginBottom: 12 }}>"{t.quote}"</p>
+                  <p style={{ fontSize: 13, lineHeight: 1.7, color: C.tm, marginBottom: 12 }}>{t.story}</p>
+                  <div style={{ padding: "10px 14px", background: C.greenS, borderRadius: 8, fontSize: 12, color: C.green, fontStyle: "italic" }}>"{t.closing}"</div>
+                  {/* Dots indicator */}
+                  <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 16 }}>
+                    {testimonials.map((_, i) => <span key={i} onClick={() => setTIdx(i)} style={{ width: 8, height: 8, borderRadius: "50%", background: i === tIdx % testimonials.length ? C.green : C.brd, cursor: "pointer", transition: "background 0.3s" }} />)}
+                  </div>
+                </div>
+              );
+            })()}
             {/* Top Donors + Recent Supporters */}
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
               <div style={{ background: C.white, borderRadius: 16, padding: "24px 24px", border: `1px solid ${C.brdL}` }}>

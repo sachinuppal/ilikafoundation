@@ -240,6 +240,43 @@ export async function getAllContributions() {
     }
 }
 
+// ===== LIVE TICKER DATA (from real contributions) =====
+export async function getRecentTickerData() {
+    if (!isSupabaseConfigured) return [];
+    try {
+        const { data, error } = await supabase
+            .from("contributions")
+            .select("donor_name, type, payment_preference, amount, created_at, payment_status")
+            .eq("payment_status", "Success")
+            .order("created_at", { ascending: false })
+            .limit(10);
+        if (error || !data || data.length === 0) return [];
+
+        return data.map(c => {
+            const firstName = (c.donor_name || "Someone").split(" ")[0];
+            const isGroup = c.type === "group";
+            const isAnnual = c.payment_preference === "annual";
+            const action = isGroup
+                ? "joined a group sponsorship"
+                : isAnnual ? "chose annual sponsorship" : "sponsored a girl's education";
+            const amount = `₹${(c.amount || 0).toLocaleString("en-IN")}`;
+
+            // Relative time
+            const diffMs = Date.now() - new Date(c.created_at).getTime();
+            const diffMin = Math.floor(diffMs / 60000);
+            const time = diffMin < 1 ? "just now"
+                : diffMin < 60 ? `${diffMin} min ago`
+                    : diffMin < 1440 ? `${Math.floor(diffMin / 60)} hr ago`
+                        : `${Math.floor(diffMin / 1440)} day${Math.floor(diffMin / 1440) > 1 ? "s" : ""} ago`;
+
+            return { name: `${firstName}${isGroup ? " & friends" : ""}`, action, time, city: "", amount };
+        });
+    } catch (e) {
+        console.warn("[Ticker] Failed to load real data:", e.message);
+        return [];
+    }
+}
+
 // ===== LIVE STATS =====
 export async function getCampaignStats() {
     if (isSupabaseConfigured) {

@@ -1,6 +1,7 @@
 // Shared constants, icons, and components used across pages
 import { useState, useEffect } from "react";
 import { getContent, getContentJSON } from "./siteContent.js";
+import { getRecentTickerData } from "./dataService.js";
 
 // ===== COLOR PALETTE =====
 export const C = {
@@ -52,8 +53,22 @@ export function Facepile({ count = 5, size = 32, label, names }) {
 export function LiveTicker() {
     const [idx, setIdx] = useState(0);
     const [show, setShow] = useState(true);
-    const activities = getContentJSON("live_ticker");
-    const len = Array.isArray(activities) ? activities.length : 0;
+    const [activities, setActivities] = useState([]);
+    useEffect(() => {
+        // Try to load real data from Supabase, fallback to CMS
+        getRecentTickerData().then(real => {
+            if (real && real.length > 0) {
+                setActivities(real);
+            } else {
+                const cms = getContentJSON("live_ticker");
+                if (Array.isArray(cms) && cms.length > 0) setActivities(cms);
+            }
+        }).catch(() => {
+            const cms = getContentJSON("live_ticker");
+            if (Array.isArray(cms) && cms.length > 0) setActivities(cms);
+        });
+    }, []);
+    const len = activities.length;
     useEffect(() => { if (len < 2) return; const t = setInterval(() => { setShow(false); setTimeout(() => { setIdx(p => (p + 1) % len); setShow(true); }, 300); }, 4500); return () => clearInterval(t); }, [len]);
     if (len === 0) return null;
     const a = activities[idx % len];
@@ -61,7 +76,7 @@ export function LiveTicker() {
     return (
         <div style={{ display: "inline-flex", alignItems: "center", gap: 10, padding: "8px 18px", borderRadius: 24, background: C.white, border: `1px solid ${C.brdL}`, fontSize: 13, color: C.tm, boxShadow: "0 2px 12px rgba(0,0,0,0.06)", transition: "all 0.3s", opacity: show ? 1 : 0, transform: show ? "translateY(0)" : "translateY(-8px)", maxWidth: "100%" }}>
             <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#4CAF50", flexShrink: 0, animation: "pulse 2s infinite" }} />
-            <span><strong style={{ color: C.td }}>{a.name}</strong> from {a.city} {a.action} <span style={{ color: C.tx }}>{"\u00B7"} {a.time}</span></span>
+            <span><strong style={{ color: C.td }}>{a.name}</strong>{a.city ? ` from ${a.city}` : ""} {a.action} <span style={{ color: C.tx }}>{"\u00B7"} {a.time}</span></span>
         </div>
     );
 }
