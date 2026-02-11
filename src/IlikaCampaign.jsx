@@ -21,6 +21,8 @@ export default function IlikaCampaign() {
   const [submitting, setSubmitting] = useState(false);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [lastPayment, setLastPayment] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [showRetention, setShowRetention] = useState(false);
   const sponsorRef = useRef(null);
 
   useEffect(() => { setM(true); loadStats(); }, []);
@@ -302,7 +304,7 @@ export default function IlikaCampaign() {
               { o: 1, icon: <User s={20} />, label: "Sponsor Individually", price: "\u20B98,000", unit: "/month", desc: "You alone power one girl's complete education and career journey. Her future, championed by you.", color: C.gold, soft: C.goldS, micro: "Most popular", sponsors: `${stats.individualCount} sponsors this month` },
               { o: 2, icon: <Users s={20} />, label: "Sponsor with Friends", price: "\u20B92,000", unit: "/person/month", desc: "4 friends. Each contributes \u20B92,000/month. Together, you fund one girl completely. Shared purpose, shared joy.", color: C.green, soft: C.greenS, micro: "Best for groups", sponsors: `${stats.groupCount} groups formed` },
             ].map(o => (
-              <div key={o.o} onClick={() => { setOpt(o.o); setDone(false); }} style={{ background: C.white, border: opt === o.o ? `2px solid ${o.color}` : `1px solid ${C.brd}`, borderRadius: 16, padding: "28px 24px", cursor: "pointer", transition: "all 0.3s ease", transform: opt === o.o ? "scale(1.01)" : "scale(1)", boxShadow: opt === o.o ? `0 4px 20px ${o.color}15` : "0 1px 4px rgba(0,0,0,0.04)", position: "relative", overflow: "hidden" }}>
+              <div key={o.o} onClick={() => { setOpt(o.o); setDone(false); setShowModal(true); setShowRetention(false); }} style={{ background: C.white, border: opt === o.o ? `2px solid ${o.color}` : `1px solid ${C.brd}`, borderRadius: 16, padding: "28px 24px", cursor: "pointer", transition: "all 0.3s ease", transform: opt === o.o ? "scale(1.01)" : "scale(1)", boxShadow: opt === o.o ? `0 4px 20px ${o.color}15` : "0 1px 4px rgba(0,0,0,0.04)", position: "relative", overflow: "hidden" }}>
                 <div style={{ position: "absolute", top: 0, right: 0, background: o.color, color: C.white, fontSize: 10, fontWeight: 600, padding: "4px 12px", borderBottomLeftRadius: 8, textTransform: "uppercase", letterSpacing: 0.5 }}>{o.micro}</div>
                 <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
                   <div style={{ width: 42, height: 42, borderRadius: 10, background: o.soft, display: "flex", alignItems: "center", justifyContent: "center", color: o.color }}>{o.icon}</div>
@@ -319,46 +321,78 @@ export default function IlikaCampaign() {
           </div>
         </section>
 
-        {/* ============ FORMS ============ */}
-        {opt === 1 && !done && (
-          <section style={{ maxWidth: 520, margin: "0 auto", padding: "0 28px 60px", animation: "fadeUp 0.4s ease" }}>
-            <div style={{ background: C.white, borderRadius: 16, padding: 32, border: `1px solid ${C.brd}`, boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
-              <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, marginBottom: 4, color: C.green }}>You're about to change a life</h3>
-              <p style={{ color: C.tl, fontSize: 13, marginBottom: 24 }}>Just a few details. Takes less than 60 seconds.</p>
-              {[{ k: "name", l: "Full Name", p: "Your full name", t: "text" }, { k: "email", l: "Email", p: "you@email.com", t: "email" }, { k: "phone", l: "Phone", p: "+91 XXXXX XXXXX", t: "tel" }, { k: "company", l: "Company (Optional)", p: "Company name", t: "text" }].map(f => <div key={f.k} style={{ marginBottom: 16 }}><label style={lbl}>{f.l}</label><input type={f.t} value={indF[f.k]} onChange={e => setIndF({ ...indF, [f.k]: e.target.value })} placeholder={f.p} style={inp} /></div>)}
-              <div style={{ marginBottom: 24 }}><label style={{ ...lbl, marginBottom: 10 }}>Payment</label><div style={{ display: "flex", gap: 10 }}>{[{ v: "monthly", l: "\u20B98,000/month", s: "Monthly" }, { v: "annual", l: "\u20B996,000/year", s: "Save \u20B9600 \u00B7 Annual" }].map(o => <button key={o.v} onClick={() => setIndF({ ...indF, payment: o.v })} style={{ flex: 1, padding: "14px 12px", borderRadius: 8, cursor: "pointer", fontFamily: "inherit", textAlign: "center", background: indF.payment === o.v ? C.goldS : C.bg, border: indF.payment === o.v ? `2px solid ${C.gold}` : `1px solid ${C.brd}`, color: indF.payment === o.v ? C.gold : C.tm }}><div style={{ fontSize: 15, fontWeight: 600 }}>{o.l}</div><div style={{ fontSize: 11, marginTop: 2, opacity: 0.7 }}>{o.s}</div></button>)}</div></div>
-              <button onClick={submitInd} disabled={submitting} style={{ width: "100%", background: `linear-gradient(135deg,${C.gold},${C.goldL})`, color: C.white, border: "none", padding: "15px", borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: submitting ? "wait" : "pointer", fontFamily: "inherit", boxShadow: `0 4px 20px ${C.gold}33`, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: submitting ? 0.7 : 1 }}>{submitting ? "Processing..." : <>Sponsor Now — {indF.payment === "monthly" ? "\u20B98,000/mo" : "\u20B996,000/yr"} <Arrow /></>}</button>
-              <p style={{ textAlign: "center", fontSize: 11, color: C.tl, marginTop: 10 }}>Secure Razorpay {"\u00B7"} 80G tax receipt {"\u00B7"} Cancel anytime</p>
-            </div>
-          </section>
-        )}
-        {opt === 1 && done && (
-          <section style={{ maxWidth: 520, margin: "0 auto", padding: "0 28px 60px", textAlign: "center" }}>
-            <div style={{ background: C.greenS, border: `1px solid ${C.green}22`, borderRadius: 16, padding: 40 }}>
-              <div style={{ color: C.green, marginBottom: 12 }}><Check s={36} /></div>
-              <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, marginBottom: 8, color: C.green }}>Thank You, {indF.name.split(" ")[0]}!</h3>
-              <p style={{ color: C.tm, fontSize: 14, lineHeight: 1.6, marginBottom: 12 }}>Your payment of {indF.payment === "monthly" ? "\u20B98,000" : "\u20B996,000"} has been received. You are now sponsoring a girl's education!</p>
-              <p style={{ color: C.tl, fontSize: 13, marginBottom: 16 }}>Tax receipt and fellowship updates will be sent to {indF.email}</p>
-              {/* Download Receipt Button */}
-              <button onClick={() => generateDonationReceipt({ donorName: indF.name, email: indF.email, phone: indF.phone, amount: indF.payment === "annual" ? 96000 : 8000, paymentId: lastPayment?.paymentId || "N/A", type: "individual", paymentPreference: indF.payment, date: new Date().toISOString(), contributionId: lastPayment?.id })} style={{ background: C.white, border: `1px solid ${C.green}44`, color: C.green, padding: "12px 28px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>\uD83D\uDCC4 Download 80G Receipt (PDF)</button>
-              {/* Post-donation share prompt */}
-              <div style={{ background: C.white, borderRadius: 10, padding: "16px", border: `1px solid ${C.brdL}`, marginTop: 8 }}>
-                <p style={{ fontSize: 13, color: C.tm, marginBottom: 8, fontWeight: 500 }}>Double your impact \u2014 share with friends</p>
-                <button onClick={() => { const t = `I just sponsored a girl's education through Ilika Foundation this Women's Day! \uD83C\uDF93 You can too: ilikafoundation.org`; if (navigator.share) navigator.share({ text: t }); else navigator.clipboard?.writeText(t); }} style={{ background: `linear-gradient(135deg,${C.green},${C.greenL})`, color: C.white, border: "none", padding: "10px 24px", borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 6 }}><Share s={14} />Share on WhatsApp</button>
+        {/* ============ MODAL OVERLAY ============ */}
+        {showModal && (opt === 1 || opt === 2) && (
+          <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={(e) => { if (e.target === e.currentTarget && !done) { setShowRetention(true); } }}>
+            {/* Backdrop */}
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }} />
+
+            {/* Retention Prompt */}
+            {showRetention && !done && (
+              <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, zIndex: 10001, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+                <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.4)" }} />
+                <div style={{ position: "relative", background: C.white, borderRadius: 20, padding: "40px 32px", maxWidth: 400, width: "100%", textAlign: "center", boxShadow: "0 20px 60px rgba(0,0,0,0.3)", animation: "modalIn 0.3s ease" }}>
+                  <button onClick={() => { setShowRetention(false); setShowModal(false); setOpt(null); }} style={{ position: "absolute", top: 14, right: 14, background: "none", border: "none", fontSize: 22, cursor: "pointer", color: C.tl, lineHeight: 1 }}>×</button>
+                  <div style={{ fontSize: 52, marginBottom: 16 }}>🙏</div>
+                  <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, color: C.green, marginBottom: 12 }}>Please don't go yet!</h3>
+                  <p style={{ color: C.tm, fontSize: 14, lineHeight: 1.7, marginBottom: 24 }}>
+                    {opt === 1
+                      ? "Just \u20B98,000/month can transform a girl's entire future \u2014 education, mentorship, career training, and a lifelong network. Your contribution can make this possible."
+                      : "Just \u20B92,000/month with 3 friends can sponsor a girl's complete education. Together, you can change her story forever."}
+                  </p>
+                  <button onClick={() => setShowRetention(false)} style={{ width: "100%", background: `linear-gradient(135deg,${C.green},${C.greenL})`, color: C.white, border: "none", padding: "15px", borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", marginBottom: 12, boxShadow: `0 4px 20px ${C.green}33` }}>Yes, I will help ❤️</button>
+                  <button onClick={() => { setShowRetention(false); setShowModal(false); setOpt(null); }} style={{ background: "none", border: "none", color: C.tl, fontSize: 13, cursor: "pointer", fontFamily: "inherit", padding: "8px" }}>Sorry, not today</button>
+                </div>
               </div>
+            )}
+
+            {/* Modal Content */}
+            <div style={{ position: "relative", zIndex: 10000, maxWidth: 520, width: "100%", maxHeight: "90vh", overflowY: "auto", animation: "modalIn 0.35s ease" }}>
+              {/* Close Button */}
+              {!done && (
+                <button onClick={() => setShowRetention(true)} style={{ position: "absolute", top: 14, right: 14, zIndex: 10, width: 32, height: 32, borderRadius: "50%", background: "rgba(0,0,0,0.06)", border: "none", fontSize: 18, cursor: "pointer", color: C.tl, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>×</button>
+              )}
+
+              {/* Individual Form */}
+              {opt === 1 && !done && (
+                <div style={{ background: C.white, borderRadius: 20, padding: "36px 32px", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+                  <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, marginBottom: 4, color: C.green }}>You're about to change a life</h3>
+                  <p style={{ color: C.tl, fontSize: 13, marginBottom: 24 }}>Just a few details. Takes less than 60 seconds.</p>
+                  {[{ k: "name", l: "Full Name", p: "Your full name", t: "text" }, { k: "email", l: "Email", p: "you@email.com", t: "email" }, { k: "phone", l: "Phone", p: "+91 XXXXX XXXXX", t: "tel" }, { k: "company", l: "Company (Optional)", p: "Company name", t: "text" }].map(f => <div key={f.k} style={{ marginBottom: 16 }}><label style={lbl}>{f.l}</label><input type={f.t} value={indF[f.k]} onChange={e => setIndF({ ...indF, [f.k]: e.target.value })} placeholder={f.p} style={inp} /></div>)}
+                  <div style={{ marginBottom: 24 }}><label style={{ ...lbl, marginBottom: 10 }}>Payment</label><div style={{ display: "flex", gap: 10 }}>{[{ v: "monthly", l: "\u20B98,000/month", s: "Monthly" }, { v: "annual", l: "\u20B996,000/year", s: "Save \u20B9600 \u00B7 Annual" }].map(o => <button key={o.v} onClick={() => setIndF({ ...indF, payment: o.v })} style={{ flex: 1, padding: "14px 12px", borderRadius: 8, cursor: "pointer", fontFamily: "inherit", textAlign: "center", background: indF.payment === o.v ? C.goldS : C.bg, border: indF.payment === o.v ? `2px solid ${C.gold}` : `1px solid ${C.brd}`, color: indF.payment === o.v ? C.gold : C.tm }}><div style={{ fontSize: 15, fontWeight: 600 }}>{o.l}</div><div style={{ fontSize: 11, marginTop: 2, opacity: 0.7 }}>{o.s}</div></button>)}</div></div>
+                  <button onClick={submitInd} disabled={submitting} style={{ width: "100%", background: `linear-gradient(135deg,${C.gold},${C.goldL})`, color: C.white, border: "none", padding: "15px", borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: submitting ? "wait" : "pointer", fontFamily: "inherit", boxShadow: `0 4px 20px ${C.gold}33`, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: submitting ? 0.7 : 1 }}>{submitting ? "Processing..." : <>Sponsor Now — {indF.payment === "monthly" ? "₹8,000/mo" : "₹96,000/yr"} <Arrow /></>}</button>
+                  <p style={{ textAlign: "center", fontSize: 11, color: C.tl, marginTop: 10 }}>Secure Razorpay {"\u00B7"} 80G tax receipt {"\u00B7"} Cancel anytime</p>
+                </div>
+              )}
+
+              {/* Individual Success */}
+              {opt === 1 && done && (
+                <div style={{ background: C.greenS, border: `1px solid ${C.green}22`, borderRadius: 20, padding: 40, textAlign: "center", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+                  <button onClick={() => { setShowModal(false); setOpt(null); setDone(false); }} style={{ position: "absolute", top: 14, right: 14, zIndex: 10, width: 32, height: 32, borderRadius: "50%", background: "rgba(0,0,0,0.06)", border: "none", fontSize: 18, cursor: "pointer", color: C.tl, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>×</button>
+                  <div style={{ color: C.green, marginBottom: 12 }}><Check s={36} /></div>
+                  <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, marginBottom: 8, color: C.green }}>Thank You, {indF.name.split(" ")[0]}!</h3>
+                  <p style={{ color: C.tm, fontSize: 14, lineHeight: 1.6, marginBottom: 12 }}>Your payment of {indF.payment === "monthly" ? "\u20B98,000" : "\u20B996,000"} has been received. You are now sponsoring a girl's education!</p>
+                  <p style={{ color: C.tl, fontSize: 13, marginBottom: 16 }}>Tax receipt and fellowship updates will be sent to {indF.email}</p>
+                  <button onClick={() => generateDonationReceipt({ donorName: indF.name, email: indF.email, phone: indF.phone, amount: indF.payment === "annual" ? 96000 : 8000, paymentId: lastPayment?.paymentId || "N/A", type: "individual", paymentPreference: indF.payment, date: new Date().toISOString(), contributionId: lastPayment?.id })} style={{ background: C.white, border: `1px solid ${C.green}44`, color: C.green, padding: "12px 28px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>\uD83D\uDCC4 Download 80G Receipt (PDF)</button>
+                  <div style={{ background: C.white, borderRadius: 10, padding: "16px", border: `1px solid ${C.brdL}`, marginTop: 8 }}>
+                    <p style={{ fontSize: 13, color: C.tm, marginBottom: 8, fontWeight: 500 }}>Double your impact \u2014 share with friends</p>
+                    <button onClick={() => { const t = `I just sponsored a girl's education through Ilika Foundation this Women's Day! \uD83C\uDF93 You can too: ilikafoundation.org`; if (navigator.share) navigator.share({ text: t }); else navigator.clipboard?.writeText(t); }} style={{ background: `linear-gradient(135deg,${C.green},${C.greenL})`, color: C.white, border: "none", padding: "10px 24px", borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 6 }}><Share s={14} />Share on WhatsApp</button>
+                  </div>
+                </div>
+              )}
+
+              {/* Group Form */}
+              {opt === 2 && (
+                <div style={{ background: C.white, borderRadius: 20, padding: "36px 32px", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+                  <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, marginBottom: 4, color: C.green }}>Start a Group</h3>
+                  <p style={{ color: C.tl, fontSize: 13, marginBottom: 24 }}>You'll get a unique link to share with 3 friends. Once all 4 join, one girl's future is funded.</p>
+                  {["name", "email", "phone"].map(f => <div key={f} style={{ marginBottom: 16 }}><label style={lbl}>{f === "name" ? "Your Name" : f.charAt(0).toUpperCase() + f.slice(1)}</label><input type={f === "email" ? "email" : f === "phone" ? "tel" : "text"} value={grpF[f]} onChange={e => setGrpF({ ...grpF, [f]: e.target.value })} placeholder={f === "name" ? "Your full name" : f === "email" ? "you@email.com" : "+91 XXXXX XXXXX"} style={inp} /></div>)}
+                  <button onClick={submitGrp} disabled={submitting} style={{ width: "100%", background: `linear-gradient(135deg,${C.green},${C.greenL})`, color: C.white, border: "none", padding: "15px", borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: submitting ? "wait" : "pointer", fontFamily: "inherit", boxShadow: `0 4px 20px ${C.green}33`, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: submitting ? 0.7 : 1 }}>{submitting ? "Creating Group..." : <>Create Group & Get Link <Arrow /></>}</button>
+                  <p style={{ textAlign: "center", fontSize: 11, color: C.tl, marginTop: 10 }}>You're sponsor #1 of 4 {"\u00B7"} Share via WhatsApp, text, or email</p>
+                </div>
+              )}
             </div>
-          </section>
-        )}
-        {opt === 2 && (
-          <section style={{ maxWidth: 520, margin: "0 auto", padding: "0 28px 60px", animation: "fadeUp 0.4s ease" }}>
-            <div style={{ background: C.white, borderRadius: 16, padding: 32, border: `1px solid ${C.brd}`, boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
-              <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, marginBottom: 4, color: C.green }}>Start a Group</h3>
-              <p style={{ color: C.tl, fontSize: 13, marginBottom: 24 }}>You'll get a unique link to share with 3 friends. Once all 4 join, one girl's future is funded.</p>
-              {["name", "email", "phone"].map(f => <div key={f} style={{ marginBottom: 16 }}><label style={lbl}>{f === "name" ? "Your Name" : f.charAt(0).toUpperCase() + f.slice(1)}</label><input type={f === "email" ? "email" : f === "phone" ? "tel" : "text"} value={grpF[f]} onChange={e => setGrpF({ ...grpF, [f]: e.target.value })} placeholder={f === "name" ? "Your full name" : f === "email" ? "you@email.com" : "+91 XXXXX XXXXX"} style={inp} /></div>)}
-              <button onClick={submitGrp} disabled={submitting} style={{ width: "100%", background: `linear-gradient(135deg,${C.green},${C.greenL})`, color: C.white, border: "none", padding: "15px", borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: submitting ? "wait" : "pointer", fontFamily: "inherit", boxShadow: `0 4px 20px ${C.green}33`, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: submitting ? 0.7 : 1 }}>{submitting ? "Creating Group..." : <>Create Group & Get Link <Arrow /></>}</button>
-              <p style={{ textAlign: "center", fontSize: 11, color: C.tl, marginTop: 10 }}>You're sponsor #1 of 4 {"\u00B7"} Share via WhatsApp, text, or email</p>
-            </div>
-          </section>
+          </div>
         )}
 
         {/* ============ CLOSING CTA ============ */}
@@ -368,8 +402,8 @@ export default function IlikaCampaign() {
             <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(20px, 3.5vw, 32px)", lineHeight: 1.3, marginBottom: 16, fontWeight: 400, position: "relative" }}>Right now, somewhere in India, a girl is wondering<br />if anyone believes she deserves a chance.</h2>
             <p style={{ fontSize: 15, lineHeight: 1.7, opacity: 0.85, maxWidth: 480, margin: "0 auto 24px", position: "relative" }}>You do. {"\u20B9"}8,000/month — or {"\u20B9"}2,000 with three friends — is all it takes.</p>
             <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 12, position: "relative" }}>
-              <button onClick={() => { setOpt(1); setDone(false); scrollToSponsor(); }} style={{ background: C.gold, color: C.white, border: "none", padding: "14px 32px", borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 8 }}>Sponsor a Girl <Arrow /></button>
-              <button onClick={() => { setOpt(2); setDone(false); scrollToSponsor(); }} style={{ background: "rgba(255,255,255,0.15)", color: C.white, border: "1px solid rgba(255,255,255,0.3)", padding: "14px 32px", borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 8 }}>Start a Group <Users s={16} /></button>
+              <button onClick={() => { setOpt(1); setDone(false); setShowModal(true); setShowRetention(false); scrollToSponsor(); }} style={{ background: C.gold, color: C.white, border: "none", padding: "14px 32px", borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 8 }}>Sponsor a Girl <Arrow /></button>
+              <button onClick={() => { setOpt(2); setDone(false); setShowModal(true); setShowRetention(false); scrollToSponsor(); }} style={{ background: "rgba(255,255,255,0.15)", color: C.white, border: "1px solid rgba(255,255,255,0.3)", padding: "14px 32px", borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 8 }}>Start a Group <Users s={16} /></button>
             </div>
             <div style={{ marginTop: 16, position: "relative" }}><Facepile count={6} size={26} label={<span style={{ color: "rgba(255,255,255,0.75)" }}>Join {stats.totalSponsors} sponsors who already said yes</span>} /></div>
           </div>

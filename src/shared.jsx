@@ -199,6 +199,7 @@ export function ImpactCalculator() {
 export const GlobalStyles = () => (
     <style>{`
     @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes modalIn { from { opacity: 0; transform: scale(0.95) translateY(12px); } to { opacity: 1; transform: scale(1) translateY(0); } }
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
     input::placeholder { color: ${C.tx}; }
     input:focus { border-color: ${C.green} !important; }
