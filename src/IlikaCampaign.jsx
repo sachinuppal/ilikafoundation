@@ -165,7 +165,7 @@ export default function IlikaCampaign() {
       <div style={{ position: "relative", zIndex: 1 }}>
         {/* Nav with Facepile */}
         <nav style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 28px", maxWidth: 1100, margin: "0 auto" }}>
-          <img src={ilikaLogo} alt="Ilika Foundation" style={{ height: 48, width: "auto" }} />
+          <img src={ilikaLogo} alt="Ilika Foundation" style={{ height: 96, width: "auto" }} />
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <Facepile count={4} size={24} />
             <span style={{ fontSize: 12, color: C.tl, fontWeight: 500 }}>{stats.totalSponsors} sponsors</span>
@@ -525,7 +525,7 @@ export default function IlikaCampaign() {
 
         {/* Footer */}
         <footer style={{ textAlign: "center", padding: "40px 28px", borderTop: `1px solid ${C.brdL}` }}>
-          <img src={ilikaLogo} alt="Ilika Foundation" style={{ height: 40, width: "auto", marginBottom: 8 }} />
+          <img src={ilikaLogo} alt="Ilika Foundation" style={{ height: 80, width: "auto", marginBottom: 8 }} />
           <p style={{ color: C.tx, fontSize: 12, marginBottom: 4 }}>{getContent("footer_tagline")}</p>
           <p style={{ color: C.tx, fontSize: 11 }}>{getContent("footer_org")}</p>
         </footer>
