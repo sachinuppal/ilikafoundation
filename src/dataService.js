@@ -200,7 +200,7 @@ export async function createManualContribution({ name, email, phone, company, am
         phone,
         company: company || null,
         type: "individual",
-        payment_preference: "one-time",
+        payment_preference: "annual",
         payment_status: "Success",
         amount: Number(amount),
         referral_code: null,
