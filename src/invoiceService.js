@@ -259,6 +259,7 @@ export function generateDonationReceipt({
         "     We will apply for the final registration before the validity of this certificate ends,",
         "     as per prevailing regulations.",
         "4.  Deduction under Section 80G is subject to verification from Form 10BE issued annually.",
+        "5.  Eligible for 50% deduction under Section 80G of the Income Tax Act, 1961 (subject to qualifying limits).",
     ];
     terms.forEach(line => {
         doc.text(line, margin, y);

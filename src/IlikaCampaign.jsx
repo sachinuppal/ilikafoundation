@@ -34,8 +34,6 @@ export default function IlikaCampaign() {
   const [referralLeaders, setReferralLeaders] = useState([]);
   const sponsorRef = useRef(null);
   const { toast, showToast, showCustomToast, dismissToast } = useToast();
-  const [tIdx, setTIdx] = useState(0);
-  useEffect(() => { const t = setInterval(() => setTIdx(p => p + 1), 6000); return () => clearInterval(t); }, []);
 
   useEffect(() => {
     setM(true);
@@ -305,31 +303,25 @@ export default function IlikaCampaign() {
         {/* ============ TESTIMONIAL + TOP DONORS + RECENT SUPPORTERS ============ */}
         <section style={{ ...secStyle, padding: "48px 28px", ...an(0.24) }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 20 }}>
-            {/* Testimonial Carousel */}
-            {(() => {
-              const testimonials = [
+            {/* Testimonials — stacked vertically */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              {[
                 { initial: "K", name: getContent("testimonial_name"), role: getContent("testimonial_role"), quote: getContent("testimonial_quote"), story: getContent("testimonial_story"), closing: getContent("testimonial_closing") },
                 { initial: "S", name: "Sajiya Khan", role: "Ilika Fellow", quote: "I'm deeply grateful to Ilika for supporting my education.", story: "Before their help, my family struggled to make ends meet, and my parents were worried about my future. Ilika not only sponsored my education but also provided additional courses and training that boosted my confidence and helped me grow overall. Because of their support, I've learned new skills and made great progress in my studies.", closing: "I feel proud and thankful to be a part of Ilika." },
-              ];
-              const t = testimonials[tIdx % testimonials.length];
-              return (
-                <div style={{ background: C.white, borderRadius: 16, padding: "28px 24px", border: `1px solid ${C.brdL}`, position: "relative", transition: "opacity 0.4s ease", minHeight: 280 }}>
+              ].map((t, i) => (
+                <div key={i} style={{ background: C.white, borderRadius: 16, padding: "28px 24px", border: `1px solid ${C.brdL}`, position: "relative" }}>
                   <div style={{ position: "absolute", top: 16, left: 20, color: C.gold }}><Quote s={36} /></div>
                   <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
                     <div style={{ width: 44, height: 44, borderRadius: "50%", background: C.gold, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 16, fontWeight: 600 }}>{t.initial}</div>
                     <div><div style={{ fontWeight: 600, color: C.td }}>{t.name}</div><div style={{ fontSize: 12, color: C.tl }}>{t.role}</div></div>
-                    <div style={{ marginLeft: "auto", display: "flex", gap: 2, color: C.gold }}>{[1, 2, 3, 4, 5].map(i => <Star key={i} />)}</div>
+                    <div style={{ marginLeft: "auto", display: "flex", gap: 2, color: C.gold }}>{[1, 2, 3, 4, 5].map(j => <Star key={j} />)}</div>
                   </div>
                   <p style={{ fontFamily: "'Playfair Display', serif", fontSize: 16, lineHeight: 1.7, color: C.green, marginBottom: 12 }}>"{t.quote}"</p>
                   <p style={{ fontSize: 13, lineHeight: 1.7, color: C.tm, marginBottom: 12 }}>{t.story}</p>
                   <div style={{ padding: "10px 14px", background: C.greenS, borderRadius: 8, fontSize: 12, color: C.green, fontStyle: "italic" }}>"{t.closing}"</div>
-                  {/* Dots indicator */}
-                  <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 16 }}>
-                    {testimonials.map((_, i) => <span key={i} onClick={() => setTIdx(i)} style={{ width: 8, height: 8, borderRadius: "50%", background: i === tIdx % testimonials.length ? C.green : C.brd, cursor: "pointer", transition: "background 0.3s" }} />)}
-                  </div>
                 </div>
-              );
-            })()}
+              ))}
+            </div>
             {/* Top Donors + Recent Supporters */}
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
               <div style={{ background: C.white, borderRadius: 16, padding: "24px 24px", border: `1px solid ${C.brdL}` }}>
